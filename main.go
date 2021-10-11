@@ -35,9 +35,13 @@ func main() {
 	defer conn.Close()
 
 	// TODO: read nickname and channel from user input (stdin ?? or TUI)
+	conn.Write([]byte("CAP LS\r\n"))
+	// TODO: PASS if it requires a password
 	conn.Write([]byte("NICK illusion\r\n"))
 	conn.Write([]byte("USER illusion 0 * :illusion\r\n"))
-	conn.Write([]byte("JOIN #libera\r\n"))
+	// TODO: CAP REQ :whatever capability the client recognizes and supports
+	conn.Write([]byte("CAP END\r\n"))
+	// conn.Write([]byte("JOIN #libera\r\n"))
 
 	for {
 		buf := make([]byte, 1024)
