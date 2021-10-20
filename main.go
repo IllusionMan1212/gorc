@@ -17,47 +17,24 @@
 package main
 
 import (
-	"crypto/tls"
-	"fmt"
-	"io"
+	"bufio"
 	"log"
 )
 
 func main() {
-	// TOOD: read the server (and port?) from user input (stdin ?? or TUI)
-	// TODO: allow for insecure connections thru a checkbox (needed for irc servers that maybe don't have encryption on)
-	cfg := &tls.Config{ServerName: "irc.libera.chat"}
-	conn, err := tls.Dial("tcp", "irc.libera.chat:6697", cfg)
-	if err != nil {
-		// TODO: properly handle the error instead of Fatal-ing (failed to initiate a connection to server)
-		log.Fatal(err)
-	}
-	defer conn.Close()
+	// create new client with the provided host and port
+	client := NewClient("irc.libera.chat", "6697")
+	defer client.conn.Close()
+	go client.Run()
 
-	// TODO: read nickname and channel from user input (stdin ?? or TUI)
-	conn.Write([]byte("CAP LS\r\n"))
-	// TODO: PASS if it requires a password
-	conn.Write([]byte("NICK illusion\r\n"))
-	conn.Write([]byte("USER illusion 0 * :illusion\r\n"))
-	// TODO: CAP REQ :whatever capability the client recognizes and supports
-	conn.Write([]byte("CAP END\r\n"))
-	// conn.Write([]byte("JOIN #libera\r\n"))
-
+	// main loop
+	r := bufio.NewReaderSize(client.conn, 512)
 	for {
-		buf := make([]byte, 1024)
-
-		_, err := conn.Read(buf)
+		msg, err := r.ReadString('\n')
 		if err != nil {
-			if err == io.EOF {
-				log.Print("End of file received\n")
-				return
-			}
+			log.Print(err)
 		}
 
-		// TODO: parse received data according to the protocol
-
-		// TOOD: reply to PINGs with PONGs to keep the connection alive
-
-		fmt.Printf("Data: %s\n", buf)
+		client.receive <- msg
 	}
 }

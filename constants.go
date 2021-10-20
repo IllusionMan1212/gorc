@@ -77,11 +77,11 @@ const (
 )
 
 /* --- IRC Message --- */
-type message struct {
-	Tags       []string // starts with @ | Optional
-	Prefix     string   // starts with : | Optional
-	Command    string   // can either be a string or a numeric value | Required
-	Parameters []string // Optional (Dependant on command)
+type IRCMessage struct {
+	Tags       map[string]string // starts with @ | Optional
+	Source     string            // starts with : | Optional
+	Command    string            // can either be a string or a numeric value | Required
+	Parameters []string          // Optional (Dependant on command)
 }
 
 /* --- Channel Types --- */
@@ -234,16 +234,5 @@ const (
 // Names are casemapped, read the casemapping from the RPL_ISUPPORT the server sends when registration is completed.
 // Silently ignore empty messages and only parse messages when you encounter a CRLF.
 
-// Messages format
-// [@tags] [:source|prefix] <command> <parameters>
-// tags: Optional metadata on a message, starting with "@" (0x40)
-// source|prefix: Optional note of where the message came from, starting with ":" (0x3A)
-// command: The specific command this message represents
-// parameters: if it exists, data relevant to this specific command
-
-// Message parts are separated by one or more ASCII SPACE characters " " (0x20)
-// Messages are limited to 512 bytes including the CRLF characters.
-
-// Client MUST be able to process a message whether it contains a source|prefix or not.
 // Client SHOULD NOT include a source when sending a message, but if included it MUST be the nickname of the client.
 // When receiving a numeric reply, client MUST be able to handle any number of parameters on a numeric reply.
