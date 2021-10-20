@@ -57,6 +57,7 @@ func NewClient(host string, port string) *Client {
 }
 
 func (c Client) handleCommand(message IRCMessage) {
+	fmt.Printf("Tags: %s\n", message.Tags)
 	fmt.Printf("Source: %s\n", message.Source)
 	fmt.Printf("Command: %s\n", message.Command)
 	fmt.Printf("Params: %s\n", message.Parameters)

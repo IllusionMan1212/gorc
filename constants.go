@@ -78,10 +78,15 @@ const (
 
 /* --- IRC Message --- */
 type IRCMessage struct {
-	Tags       map[string]string // starts with @ | Optional
-	Source     string            // starts with : | Optional
-	Command    string            // can either be a string or a numeric value | Required
-	Parameters []string          // Optional (Dependant on command)
+	Tags       []Tag    // starts with @ | Optional
+	Source     string   // starts with : | Optional
+	Command    string   // can either be a string or a numeric value | Required
+	Parameters []string // Optional (Dependant on command)
+}
+
+type Tag struct {
+	key   string
+	value string
 }
 
 /* --- Channel Types --- */

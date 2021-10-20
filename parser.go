@@ -17,91 +17,50 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 )
+
+func parseTags(rawTags string) []Tag {
+	// TODO:
+	// TOOD: some tags don't have an "=" and they're basically considered "true"
+	return nil
+}
 
 func parseIRCMessage(line string) IRCMessage {
 	ircMessage := &IRCMessage{}
 
-	switch line[0] {
-	case '@':
-		substrs := strings.SplitN(line, " ", 4)
-
-		tagsSlice := make(map[string]string)
-
-		tags := strings.Split(substrs[0][1:], ";")
-
-		for _, tag := range tags {
-			splitTag := strings.Split(tag, "=")
-
-			// TOOD: some tags don't have an "=" and they're basically considered "true"
-			tagsSlice[splitTag[0]] = splitTag[1]
-		}
-
-		ircMessage := IRCMessage{
-			Tags:    tagsSlice,
-			Source:  substrs[1][1:],
-			Command: substrs[2],
-		}
-
-		ircMessage.Tags = tagsSlice
-		ircMessage.Source = substrs[1][1:]
-		ircMessage.Command = substrs[2]
-
-		fmt.Printf("%s\n", ircMessage.Tags)
-		fmt.Printf("%s\n", ircMessage.Source)
-		fmt.Printf("%s\n", ircMessage.Command)
-		fmt.Printf("%s\n", ircMessage.Parameters)
-		// TODO:
-
-		break
-	case ':':
-		substrs := strings.SplitN(line, " ", 3)
-
-		parameters := make([]string, 0)
-
-		// if parameters exist
-		if len(substrs) > 2 {
-			params := strings.SplitN(substrs[2], " :", 2)
-
-			parameters = strings.Split(params[0], " ")
-			// TODO: parameters can be empty. this is denoted by a ":"
-
-			// if there's a final space-included param
-			if len(params) > 1 {
-				parameters = append(parameters, params[1])
-			}
-		}
-
-		ircMessage.Source = substrs[0][1:]
-		ircMessage.Command = substrs[1]
-		ircMessage.Parameters = parameters
-
-		break
-	default:
+	if line[0] == '@' {
 		substrs := strings.SplitN(line, " ", 2)
+		tags := parseTags(substrs[0][1:])
+		ircMessage.Tags = tags
 
-		parameters := make([]string, 0)
+		line = substrs[1]
+	}
 
-		// if parameters exist
-		if len(substrs) > 1 {
-			params := strings.SplitN(substrs[1], " :", 2)
+	if line[0] == ':' {
+		substrs := strings.SplitN(line, " ", 2)
+		ircMessage.Source = substrs[0]
 
-			parameters = strings.Split(params[0], " ")
-			// TODO: parameters can be empty. this is denoted by a ":"
+		line = substrs[1]
+	}
 
-			// if there's a trailing parameter
-			if len(params) > 1 {
-				parameters = append(parameters, params[1])
-			}
+	substrs := strings.SplitN(line, " ", 2)
+
+	ircMessage.Command = substrs[0]
+
+	// if parameters exist
+	if len(substrs) > 1 {
+		params := strings.SplitN(substrs[1], " :", 2)
+
+		parameters := strings.Split(params[0], " ")
+		// TODO: parameters can be empty. this is denoted by a ":"
+
+		// if there's a trailing parameter
+		if len(params) > 1 {
+			parameters = append(parameters, params[1])
 		}
 
-		ircMessage.Source = ""
-		ircMessage.Command = substrs[0]
 		ircMessage.Parameters = parameters
-
-		break
 	}
 
 	return *ircMessage
