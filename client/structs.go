@@ -14,35 +14,16 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see https://www.gnu.org/licenses.
 
-package main
+package client
 
-import (
-	"log"
+type IRCMessage struct {
+	Tags       []Tag    // starts with @ | Optional
+	Source     string   // starts with : | Optional
+	Command    string   // can either be a string or a numeric value | Required
+	Parameters []string // Optional (Dependant on command)
+}
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/illusionman1212/gorc/ui/app"
-)
-
-func main() {
-	if err := tea.NewProgram(app.InitialState(), tea.WithAltScreen()).Start(); err != nil {
-		log.Fatal(err)
-	}
-
-	/*
-		// create new client with the provided host and port
-		client := NewClient("irc.libera.chat", "6697")
-		defer client.conn.Close()
-		go client.Run()
-
-		// main loop
-		r := bufio.NewReaderSize(client.conn, 512)
-		for {
-			msg, err := r.ReadString('\n')
-			if err != nil {
-				log.Print(err)
-			}
-
-			client.receive <- msg
-		}
-	*/
+type Tag struct {
+	key   string
+	value string
 }

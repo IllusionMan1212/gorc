@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see https://www.gnu.org/licenses.
 
-package main
+package client
 
 import (
 	"crypto/tls"
@@ -57,16 +57,12 @@ func NewClient(host string, port string) *Client {
 }
 
 func (c Client) handleCommand(message IRCMessage) {
-	fmt.Printf("Tags: %s\n", message.Tags)
-	fmt.Printf("Source: %s\n", message.Source)
-	fmt.Printf("Command: %s\n", message.Command)
-	fmt.Printf("Params: %s\n", message.Parameters)
-
 	switch message.Command {
 	case "PING":
 		c.conn.Write([]byte("PONG\r\n"))
 		break
 	}
+	// TODO: handle all other commands
 }
 
 func (c Client) Run() {

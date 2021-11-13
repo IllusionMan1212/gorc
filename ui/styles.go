@@ -14,35 +14,34 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see https://www.gnu.org/licenses.
 
-package main
+package ui
 
-import (
-	"log"
+import "github.com/charmbracelet/lipgloss"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/illusionman1212/gorc/ui/app"
-)
-
-func main() {
-	if err := tea.NewProgram(app.InitialState(), tea.WithAltScreen()).Start(); err != nil {
-		log.Fatal(err)
+var (
+	Border = lipgloss.Border{
+		Top:         "─",
+		Bottom:      "─",
+		Left:        "│",
+		Right:       "│",
+		TopLeft:     "╭",
+		TopRight:    "╮",
+		BottomLeft:  "╰",
+		BottomRight: "╯",
 	}
 
-	/*
-		// create new client with the provided host and port
-		client := NewClient("irc.libera.chat", "6697")
-		defer client.conn.Close()
-		go client.Run()
+	MainStyle = lipgloss.NewStyle().
+			Width(172).
+			Height(40)
 
-		// main loop
-		r := bufio.NewReaderSize(client.conn, 512)
-		for {
-			msg, err := r.ReadString('\n')
-			if err != nil {
-				log.Print(err)
-			}
+	DialogStyle = lipgloss.NewStyle().
+			Border(Border, true).
+			Align(lipgloss.Center).
+			Width(50).
+			Padding(3, 6).
+			BorderForeground(lipgloss.Color("105"))
 
-			client.receive <- msg
-		}
-	*/
-}
+	CursorStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("105"))
+	FocusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("105"))
+	NoStyle      = lipgloss.NewStyle()
+)

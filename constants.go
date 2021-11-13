@@ -16,20 +16,6 @@
 
 package main
 
-const welcomeMsg = `                                        
-                                        
-  /$$$$$$   /$$$$$$   /$$$$$$   /$$$$$$$
- /$$__  $$ /$$__  $$ /$$__  $$ /$$_____/
-| $$  \ $$| $$  \ $$| $$  \__/| $$      
-| $$  | $$| $$  | $$| $$      | $$      
-|  $$$$$$$|  $$$$$$/| $$      |  $$$$$$$
- \____  $$ \______/ |__/       \_______/
- /$$  \ $$                              
-|  $$$$$$/                              
- \______/                               
-
-`
-
 /* --- IRC Ports --- */
 const (
 	INSECURE_PORT = 6667
@@ -89,19 +75,6 @@ const (
 	// Left behind...
 	PONG = "PONG" // Respond to a server PING
 )
-
-/* --- IRC Message --- */
-type IRCMessage struct {
-	Tags       []Tag    // starts with @ | Optional
-	Source     string   // starts with : | Optional
-	Command    string   // can either be a string or a numeric value | Required
-	Parameters []string // Optional (Dependant on command)
-}
-
-type Tag struct {
-	key   string
-	value string
-}
 
 /* --- Channel Types --- */
 // These are the channel prefixes for different types of channels
