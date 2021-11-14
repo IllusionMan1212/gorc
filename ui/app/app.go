@@ -1,5 +1,5 @@
 // gorc project
-// Copyright (C) 2021 IllusionMan1212 and contributors
+// Copyright (C) 2021 IllusionMan1212
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
