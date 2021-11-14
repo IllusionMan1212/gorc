@@ -79,7 +79,7 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 
 			// run the newClient cmd when pressing "enter" while focused on the connect button
 			if str == "enter" && s.FocusIndex == len(s.Inputs)+1 {
-				return s, tea.Quit // TODO: change this to create a newClient and connect using a tea.Cmd
+				return s, connect
 			}
 
 			// toggle tls state when pressing "enter" while focused on the checkbox

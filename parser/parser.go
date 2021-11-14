@@ -14,11 +14,23 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see https://www.gnu.org/licenses.
 
-package client
+package parser
 
 import (
 	"strings"
 )
+
+type IRCMessage struct {
+	Tags       []Tag    // starts with @ | Optional
+	Source     string   // starts with : | Optional
+	Command    string   // can either be a string or a numeric value | Required
+	Parameters []string // Optional (Dependant on command)
+}
+
+type Tag struct {
+	key   string
+	value string
+}
 
 func parseTags(rawTags string) []Tag {
 	// TODO:
@@ -26,8 +38,12 @@ func parseTags(rawTags string) []Tag {
 	return nil
 }
 
-func parseIRCMessage(line string) IRCMessage {
-	ircMessage := &IRCMessage{}
+func ParseIRCMessage(line string) IRCMessage {
+	ircMessage := IRCMessage{}
+
+	if len(line) <= 0 {
+		return IRCMessage{}
+	}
 
 	if line[0] == '@' {
 		substrs := strings.SplitN(line, " ", 2)
@@ -63,5 +79,5 @@ func parseIRCMessage(line string) IRCMessage {
 		ircMessage.Parameters = parameters
 	}
 
-	return *ircMessage
+	return ircMessage
 }

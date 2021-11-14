@@ -27,22 +27,4 @@ func main() {
 	if err := tea.NewProgram(app.InitialState(), tea.WithAltScreen()).Start(); err != nil {
 		log.Fatal(err)
 	}
-
-	/*
-		// create new client with the provided host and port
-		client := NewClient("irc.libera.chat", "6697")
-		defer client.conn.Close()
-		go client.Run()
-
-		// main loop
-		r := bufio.NewReaderSize(client.conn, 512)
-		for {
-			msg, err := r.ReadString('\n')
-			if err != nil {
-				log.Print(err)
-			}
-
-			client.receive <- msg
-		}
-	*/
 }

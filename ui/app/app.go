@@ -17,12 +17,16 @@
 package app
 
 import (
+	"bufio"
 	"log"
 	"os"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/illusionman1212/gorc/client"
 	"github.com/illusionman1212/gorc/ui"
 	"github.com/illusionman1212/gorc/ui/login"
+	"github.com/illusionman1212/gorc/ui/mainscreen"
 	"golang.org/x/term"
 )
 
@@ -33,39 +37,44 @@ const (
 	MainScreen
 )
 
-// TODO: have a global State that holds a separate client State and separate tui State
-type State struct {
-	host string
-	port string
-
-	nick     string
-	password string
-
+type UI struct {
 	windowWidth   int
 	windowHeight  int
 	currentScreen Screen
-
-	login login.State
+	login         login.State
+	mainScreen    mainscreen.State
 }
 
-func InitialState() State {
+type State struct {
+	ui     UI
+	client *client.Client
+}
+
+func initialUiState() UI {
 	width, height, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
+		// TODO: properly handle this error
 		log.Fatal(err)
 	}
 
+	return UI{
+		login:        login.NewLogin(),
+		windowWidth:  width,
+		windowHeight: height,
+	}
+}
+
+func InitialState() State {
 	s := State{
-		login:         login.NewLogin(),
-		windowWidth:   width,
-		windowHeight:  height,
-		currentScreen: Login,
+		client: &client.Client{},
+		ui:     initialUiState(),
 	}
 
 	return s
 }
 
 func (s State) Init() tea.Cmd {
-	return nil
+	return textinput.Blink
 }
 
 func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -74,26 +83,52 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			// TODO: clean up and gracefully quit by leaving the IRC channel/server and then quit bubble.
+			if s.client.Conn != nil {
+				s.client.Conn.Close()
+			}
 			return s, tea.Quit
 		}
 
 	case tea.WindowSizeMsg:
-		s.windowWidth = msg.Width
-		s.windowHeight = msg.Height
+		s.ui.windowWidth = msg.Width
+		s.ui.windowHeight = msg.Height
 
 		ui.MainStyle = ui.MainStyle.
 			Width(msg.Width).
 			Height(msg.Height)
 
 		return s, nil
+	case login.ConnectingMsg:
+		host := s.ui.login.Inputs[0].Value()
+		port := s.ui.login.Inputs[1].Value()
+		channel := s.ui.login.Inputs[2].Value()
+		nickname := s.ui.login.Inputs[3].Value()
+		password := s.ui.login.Inputs[4].Value()
+		tlsEnabled := s.ui.login.TLS
+
+		s.ui.currentScreen = MainScreen
+
+		// create new client with the provided host and port
+		client := client.NewClient(host, port, tlsEnabled)
+		client.Register(nickname, password, channel)
+		s.client = client
+
+		r := bufio.NewReaderSize(client.Conn, 512)
+		s.ui.mainScreen.Reader = r
+
+		return s, mainscreen.InitialRead
 	}
 
 	// switch between which screen is currently active and update its state
-	switch s.currentScreen {
+	switch s.ui.currentScreen {
 	case Login:
-		loginState, loginCmd := s.login.Update(msg)
-		s.login = loginState
-		return s, loginCmd
+		state, cmd := s.ui.login.Update(msg)
+		s.ui.login = state
+		return s, cmd
+	case MainScreen:
+		state, cmd := s.ui.mainScreen.Update(msg)
+		s.ui.mainScreen = state
+		return s, cmd
 	}
 
 	return s, nil
@@ -101,9 +136,11 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (s State) View() string {
 	// switch between which screen is currently active and render it.
-	switch s.currentScreen {
+	switch s.ui.currentScreen {
 	case Login:
-		return s.login.View()
+		return s.ui.login.View()
+	case MainScreen:
+		return s.ui.mainScreen.View()
 	}
 
 	return "Error: this screen shouldn't ever show"
