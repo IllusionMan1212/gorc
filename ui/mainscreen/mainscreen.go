@@ -22,12 +22,14 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/illusionman1212/gorc/client"
 	"github.com/illusionman1212/gorc/parser"
 )
 
 type State struct {
 	content string
 	Reader  *bufio.Reader
+	Client  *client.Client
 }
 
 func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
@@ -38,6 +40,13 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		message := parser.ParseIRCMessage(msg.Msg)
 		fullMsg := fmt.Sprintf("%s %s %s", message.Source, message.Command, strings.Join(message.Parameters, " "))
 		s.content += fullMsg
+
+		// TODO: handle different commands
+		switch message.Command {
+		case "PING":
+			s.Client.SendCommand("PONG")
+			break
+		}
 
 		return s, s.readFromServer
 	}

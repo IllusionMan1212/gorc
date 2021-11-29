@@ -21,16 +21,11 @@ import (
 	"fmt"
 	"log"
 	"strings"
-
-	"github.com/illusionman1212/gorc/parser"
 )
 
 type Client struct {
 	// tcp connection
 	Conn *tls.Conn
-
-	// channel to receive data that comes through from the connection
-	Receive chan string
 }
 
 const CRLF = "\r\n"
@@ -47,8 +42,7 @@ func NewClient(host string, port string, tlsEnabled bool) *Client {
 	}
 
 	return &Client{
-		Conn:    conn,
-		Receive: make(chan string),
+		Conn: conn,
 	}
 }
 
@@ -58,55 +52,32 @@ func (c Client) Register(nick string, password string, channel string) {
 		log.Fatal("Attempted to write data to nil connection")
 	}
 
-	c.sendCommand("CAP", "LS")
+	c.SendCommand("CAP", "LS")
 	if password != "" {
-		c.sendCommand("PASS", password)
+		c.SendCommand("PASS", password)
 	}
 	// TODO: check if nickname has spaces and remove them
-	c.sendCommand("NICK", nick)
-	c.sendCommand("USER", nick, "0", "*", nick)
+	c.SendCommand("NICK", nick)
+	c.SendCommand("USER", nick, "0", "*", nick)
 	// TODO: CAP REQ :whatever capability the client recognizes and supports
-	c.sendCommand("CAP", "END")
-	c.sendCommand("JOIN", channel)
+	c.SendCommand("CAP", "END")
+	c.SendCommand("JOIN", channel)
 }
 
-func (c Client) handleCommand(message parser.IRCMessage) {
-	fmt.Printf("Tags: %s\n", message.Tags)
-	fmt.Printf("Source: %s\n", message.Source)
-	fmt.Printf("Command: %s\n", message.Command)
-	fmt.Printf("Params: %s\n", message.Parameters)
-
-	switch message.Command {
-	case "PING":
-		c.sendCommand("PONG")
-		break
-	}
-	// TODO: handle all other commands
-}
-
-func (c Client) sendCommand(cmd string, params ...string) {
+func (c Client) SendCommand(cmd string, params ...string) {
 	paramsString := ""
 	if len(params) > 0 {
 		paramsString = " " + strings.Join(params, " ")
 	}
 
 	// if we have more than 1 param then replace the last param's space with a " :"
-	// NOTE: not sure if we should only check if we have more than 1 param
-	// cuz one param could have spaces and would require a colon
 	if len(params) > 1 {
 		i := strings.LastIndex(paramsString, " ")
 		paramsString = paramsString[:i] + strings.Replace(paramsString[i:], " ", " :", 1)
+		// if we have more exactly 1 param and it contains spaces, we prepend colon to the param
+	} else if len(params) == 1 && strings.Contains(params[0], " ") {
+		paramsString = ":" + paramsString
 	}
 
 	c.Conn.Write([]byte(cmd + paramsString + CRLF))
-}
-
-func (c Client) Run() {
-	for {
-		select {
-		case line := <-c.Receive:
-			message := parser.ParseIRCMessage(line)
-			c.handleCommand(message)
-		}
-	}
 }

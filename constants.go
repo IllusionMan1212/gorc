@@ -29,8 +29,6 @@ const ( // do we need this as a client ????
 	COMMA  = ","  // 0x2C
 )
 
-const MESSAGE_SEPARATOR = "\r\n" // CRLF (0x0D0A)
-
 /* --- COMMANDS --- */
 const (
 	// Connection messages
