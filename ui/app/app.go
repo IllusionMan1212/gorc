@@ -112,6 +112,7 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		client := client.NewClient(host, port, tlsEnabled)
 		client.Register(nickname, password, channel)
 		s.client = client
+		s.ui.mainScreen.Client = client
 
 		r := bufio.NewReaderSize(client.Conn, 512)
 		s.ui.mainScreen.Reader = r
