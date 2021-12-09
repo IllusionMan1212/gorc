@@ -21,21 +21,33 @@ import (
 )
 
 type IRCMessage struct {
-	Tags       []Tag    // starts with @ | Optional
+	Tags       Tags     // starts with @ | Optional
 	Source     string   // starts with : | Optional
 	Command    string   // can either be a string or a numeric value | Required
 	Parameters []string // Optional (Dependant on command)
 }
 
-type Tag struct {
-	key   string
-	value string
-}
+type Tags map[string]string
 
-func parseTags(rawTags string) []Tag {
-	// TODO:
-	// TOOD: some tags don't have an "=" and they're basically considered "true"
-	return nil
+func parseTags(rawTags string) Tags {
+	tags := make(Tags, 0)
+	rawTagsSlice := strings.Split(rawTags, ";")
+
+	for _, tag := range rawTagsSlice {
+		str := strings.Split(tag, "=")
+
+		key := str[0]
+		value := ""
+
+		// we need to make sure a "value" exists before accessing str[1]
+		if len(str) > 1 {
+			value = str[1]
+		}
+
+		tags[key] = value
+	}
+
+	return tags
 }
 
 func ParseIRCMessage(line string) IRCMessage {

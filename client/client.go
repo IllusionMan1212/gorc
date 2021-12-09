@@ -77,6 +77,7 @@ func (c Client) Register(nick string, password string, channel string) {
 	c.SendCommand("NICK", nick)
 	c.SendCommand("USER", nick, "0", "*", nick)
 	// TODO: CAP REQ :whatever capability the client recognizes and supports
+	c.SendCommand("CAP", "REQ", ":message-tags")
 	c.SendCommand("CAP", "END")
 	c.SendCommand("JOIN", channel)
 }

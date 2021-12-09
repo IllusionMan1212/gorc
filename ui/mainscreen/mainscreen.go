@@ -38,7 +38,7 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		return s, s.readFromServer
 	case ReceivedIRCCommandMsg:
 		message := parser.ParseIRCMessage(msg.Msg)
-		fullMsg := fmt.Sprintf("%s %s %s", message.Source, message.Command, strings.Join(message.Parameters, " "))
+		fullMsg := fmt.Sprintf("%s %s %s %s", message.Tags, message.Source, message.Command, strings.Join(message.Parameters, " "))
 		s.content += fullMsg
 
 		// TODO: handle different commands
