@@ -73,23 +73,21 @@ func NewLogin() State {
 func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "tab", "shift+tab", "enter", "up", "down", "space":
-			str := msg.String()
-
+		key := msg.String()
+		switch key {
+		case " ", "enter":
 			// run the newClient cmd when pressing "enter" while focused on the connect button
-			if str == "enter" && s.FocusIndex == len(s.Inputs)+1 {
+			if key == "enter" && s.FocusIndex == len(s.Inputs)+1 {
 				return s, connect
 			}
 
-			// toggle tls state when pressing "enter" while focused on the checkbox
-			// TODO: figure out why space isn't working here. all other keys works just fine
-			if (str == "enter" || str == "space") && s.FocusIndex == len(s.Inputs) {
+			// toggle tls state when pressing "enter" or "space" while focused on the checkbox
+			if (key == "enter" || key == " ") && s.FocusIndex == len(s.Inputs) {
 				s.TLS = !s.TLS
 				return s, nil
 			}
-
-			if str == "up" || str == "shift+tab" {
+		case "tab", "shift+tab", "up", "down":
+			if key == "up" || key == "shift+tab" {
 				s.FocusIndex--
 			} else {
 				s.FocusIndex++
