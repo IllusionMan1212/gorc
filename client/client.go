@@ -20,12 +20,16 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"net"
 	"strings"
 )
 
 type Client struct {
+	// tls connection
+	TlsConn *tls.Conn
+
 	// tcp connection
-	Conn *tls.Conn
+	TcpConn *net.TCPConn
 }
 
 const CRLF = "\r\n"
@@ -34,24 +38,37 @@ func NewClient(host string, port string, tlsEnabled bool) *Client {
 	// TODO: distinguish between secure and insecure connections
 	addr := fmt.Sprintf("%s:%s", host, port)
 
-	cfg := &tls.Config{ServerName: host}
-	conn, err := tls.Dial("tcp", addr, cfg)
+	if tlsEnabled {
+		cfg := &tls.Config{ServerName: host}
+		conn, err := tls.Dial("tcp", addr, cfg)
+		if err != nil {
+			// TODO: properly handle the error instead of Fatal-ing (failed to initiate a connection to server)
+			log.Fatal(err)
+		}
+
+		return &Client{
+			TlsConn: conn,
+			TcpConn: nil,
+		}
+	}
+
+	addrTCP, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
-		// TODO: properly handle the error instead of Fatal-ing (failed to initiate a connection to server)
+		log.Fatal(err)
+	}
+
+	conn, err := net.DialTCP("tcp", nil, addrTCP)
+	if err != nil {
 		log.Fatal(err)
 	}
 
 	return &Client{
-		Conn: conn,
+		TlsConn: nil,
+		TcpConn: conn,
 	}
 }
 
 func (c Client) Register(nick string, password string, channel string) {
-	if c.Conn == nil {
-		// TODO: properly handle the error instead of Fatal-ing
-		log.Fatal("Attempted to write data to nil connection")
-	}
-
 	c.SendCommand("CAP", "LS")
 	if password != "" {
 		c.SendCommand("PASS", password)
@@ -65,6 +82,11 @@ func (c Client) Register(nick string, password string, channel string) {
 }
 
 func (c Client) SendCommand(cmd string, params ...string) {
+	if c.TlsConn == nil && c.TcpConn == nil {
+		// TODO: properly handle the error instead of Fatal-ing
+		log.Fatal("Attempted to write data to nil connection")
+	}
+
 	paramsString := ""
 	if len(params) > 0 {
 		paramsString = " " + strings.Join(params, " ")
@@ -79,5 +101,12 @@ func (c Client) SendCommand(cmd string, params ...string) {
 		paramsString = ":" + paramsString
 	}
 
-	c.Conn.Write([]byte(cmd + paramsString + CRLF))
+	if c.TlsConn != nil {
+		c.TlsConn.Write([]byte(cmd + paramsString + CRLF))
+	} else if c.TcpConn != nil {
+		c.TcpConn.Write([]byte(cmd + paramsString + CRLF))
+	} else {
+		// TODO: properly handle the error instead of Fatal-ing
+		log.Fatal("No valid connections to write to")
+	}
 }

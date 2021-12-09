@@ -83,8 +83,11 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			// TODO: clean up and gracefully quit by leaving the IRC channel/server and then quit bubble.
-			if s.client.Conn != nil {
-				s.client.Conn.Close()
+			if s.client.TlsConn != nil {
+				s.client.TlsConn.Close()
+			}
+			if s.client.TcpConn != nil {
+				s.client.TcpConn.Close()
 			}
 			return s, tea.Quit
 		}
@@ -114,8 +117,13 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		s.client = client
 		s.ui.mainScreen.Client = client
 
-		r := bufio.NewReaderSize(client.Conn, 512)
-		s.ui.mainScreen.Reader = r
+		if tlsEnabled {
+			r := bufio.NewReaderSize(client.TlsConn, 512)
+			s.ui.mainScreen.Reader = r
+		} else {
+			r := bufio.NewReaderSize(client.TcpConn, 512)
+			s.ui.mainScreen.Reader = r
+		}
 
 		return s, mainscreen.InitialRead
 	}
