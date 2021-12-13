@@ -14,20 +14,29 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see https://www.gnu.org/licenses.
 
-package main
+package mainscreen
 
 import (
-	"log"
-
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/illusionman1212/gorc/ui/app"
 )
 
-func main() {
-	if err := tea.NewProgram(app.InitialState(),
-		tea.WithAltScreen(),
-		tea.WithMouseCellMotion(),
-	).Start(); err != nil {
-		log.Fatal(err)
-	}
+type InputState struct {
+	input textinput.Model
+}
+
+func NewInputBox() InputState {
+	var input textinput.Model
+	input.Placeholder = "Send a message..."
+	state := InputState{input}
+
+	return state
+}
+
+func (s InputState) Update(msg tea.Msg) (InputState, tea.Cmd) {
+	return s, nil
+}
+
+func (s InputState) View() string {
+	return InputboxStyle.Render(s.input.View())
 }

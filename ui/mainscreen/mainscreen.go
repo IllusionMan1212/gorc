@@ -21,25 +21,49 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/illusionman1212/gorc/client"
 	"github.com/illusionman1212/gorc/parser"
+	"github.com/illusionman1212/gorc/ui"
 )
 
 type State struct {
-	content string
-	Reader  *bufio.Reader
-	Client  *client.Client
+	Content  string
+	Reader   *bufio.Reader
+	Client   *client.Client
+	Viewport viewport.Model
+
+	inputBox InputState
+}
+
+func NewMainScreen() State {
+	newViewport := viewport.Model{Width: ui.MainStyle.GetWidth(), Height: ui.MainStyle.GetHeight() - InputBoxHeight}
+	newViewport.HighPerformanceRendering = false
+	newViewport.SetContent("")
+
+	state := State{
+		Content:  "",
+		Reader:   nil,
+		Client:   nil,
+		Viewport: newViewport,
+		inputBox: NewInputBox(),
+	}
+	return state
 }
 
 func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
+	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case InitialReadMsg:
 		return s, s.readFromServer
 	case ReceivedIRCCommandMsg:
 		message := parser.ParseIRCMessage(msg.Msg)
 		fullMsg := fmt.Sprintf("%s %s %s %s", message.Tags, message.Source, message.Command, strings.Join(message.Parameters, " "))
-		s.content += fullMsg
+		s.Content += fullMsg
+
+		s.Viewport.SetContent(s.Content)
 
 		// TODO: handle different commands
 		switch message.Command {
@@ -51,9 +75,15 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		return s, s.readFromServer
 	}
 
-	return s, nil
+	s.Viewport, cmd = s.Viewport.Update(msg)
+
+	return s, cmd
 }
 
 func (s State) View() string {
-	return s.content
+	mainscreen := s.Viewport.View()
+
+	screen := lipgloss.JoinVertical(0, MessagesStyle.Render(mainscreen), s.inputBox.View())
+
+	return screen
 }

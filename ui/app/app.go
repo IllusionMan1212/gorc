@@ -59,6 +59,7 @@ func initialUiState() UI {
 
 	return UI{
 		login:        login.NewLogin(),
+		mainScreen:   mainscreen.NewMainScreen(),
 		windowWidth:  width,
 		windowHeight: height,
 	}
@@ -99,6 +100,9 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		ui.MainStyle = ui.MainStyle.
 			Width(msg.Width).
 			Height(msg.Height)
+
+		s.ui.mainScreen.Viewport.Width = msg.Width
+		s.ui.mainScreen.Viewport.Height = msg.Height - mainscreen.InputBoxHeight
 
 		return s, nil
 	case login.ConnectingMsg:

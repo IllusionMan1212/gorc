@@ -14,20 +14,24 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see https://www.gnu.org/licenses.
 
-package main
+package mainscreen
 
 import (
-	"log"
-
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/illusionman1212/gorc/ui/app"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/illusionman1212/gorc/ui"
 )
 
-func main() {
-	if err := tea.NewProgram(app.InitialState(),
-		tea.WithAltScreen(),
-		tea.WithMouseCellMotion(),
-	).Start(); err != nil {
-		log.Fatal(err)
-	}
-}
+var (
+	InputboxStyle = lipgloss.NewStyle().
+			Border(lipgloss.NormalBorder(), true).
+			Padding(0, 1).
+			Width(ui.MainStyle.GetWidth()).
+			BorderForeground(lipgloss.Color("105"))
+	MessagesStyle = lipgloss.NewStyle().
+			Border(lipgloss.NormalBorder(), true).
+			Width(ui.MainStyle.GetWidth()).
+			Height(ui.MainStyle.GetHeight() - InputBoxHeight).
+			BorderForeground(lipgloss.Color("105"))
+
+	InputBoxHeight = 1
+)

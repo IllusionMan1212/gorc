@@ -41,6 +41,7 @@ func NewLogin() State {
 	for i := range ls.Inputs {
 		t = textinput.NewModel()
 		t.CursorStyle = ui.CursorStyle
+		t.Prompt = "| "
 
 		switch i {
 		case 0:
