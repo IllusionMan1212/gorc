@@ -18,8 +18,6 @@ package app
 
 import (
 	"bufio"
-	"log"
-	"os"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -27,7 +25,6 @@ import (
 	"github.com/illusionman1212/gorc/ui"
 	"github.com/illusionman1212/gorc/ui/login"
 	"github.com/illusionman1212/gorc/ui/mainscreen"
-	"golang.org/x/term"
 )
 
 type Screen int
@@ -38,8 +35,6 @@ const (
 )
 
 type UI struct {
-	windowWidth   int
-	windowHeight  int
 	currentScreen Screen
 	login         login.State
 	mainScreen    mainscreen.State
@@ -51,17 +46,9 @@ type State struct {
 }
 
 func initialUiState() UI {
-	width, height, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		// TODO: properly handle this error
-		log.Fatal(err)
-	}
-
 	return UI{
-		login:        login.NewLogin(),
-		mainScreen:   mainscreen.NewMainScreen(),
-		windowWidth:  width,
-		windowHeight: height,
+		login:      login.NewLogin(),
+		mainScreen: mainscreen.NewMainScreen(),
 	}
 }
 
@@ -94,15 +81,11 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		s.ui.windowWidth = msg.Width
-		s.ui.windowHeight = msg.Height
-
 		ui.MainStyle = ui.MainStyle.
 			Width(msg.Width).
 			Height(msg.Height)
 
-		s.ui.mainScreen.Viewport.Width = msg.Width
-		s.ui.mainScreen.Viewport.Height = msg.Height - mainscreen.InputBoxHeight
+		s.ui.mainScreen.SetSize(msg.Width, msg.Height)
 
 		return s, nil
 	case login.ConnectingMsg:

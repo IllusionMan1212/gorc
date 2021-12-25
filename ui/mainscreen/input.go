@@ -19,24 +19,39 @@ package mainscreen
 import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type InputState struct {
-	input textinput.Model
+	Input textinput.Model
+	Style lipgloss.Style
 }
 
 func NewInputBox() InputState {
-	var input textinput.Model
+	input := textinput.NewModel()
 	input.Placeholder = "Send a message..."
-	state := InputState{input}
+	// input.Focus()
+	state := InputState{input, InputboxStyle}
 
 	return state
 }
 
 func (s InputState) Update(msg tea.Msg) (InputState, tea.Cmd) {
-	return s, nil
+	cmd := s.updateInputs(msg)
+	return s, cmd
+}
+
+func (s *InputState) updateInputs(msg tea.Msg) tea.Cmd {
+	var cmd tea.Cmd
+	s.Input, cmd = s.Input.Update(msg)
+
+	return cmd
+}
+
+func (s *InputState) SetSize(width int) {
+	s.Style = s.Style.Width(width - s.Style.GetHorizontalBorderSize())
 }
 
 func (s InputState) View() string {
-	return InputboxStyle.Render(s.input.View())
+	return s.Style.Render(s.Input.View())
 }

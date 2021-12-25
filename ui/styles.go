@@ -19,23 +19,12 @@ package ui
 import "github.com/charmbracelet/lipgloss"
 
 var (
-	BorderRound = lipgloss.Border{
-		Top:         "─",
-		Bottom:      "─",
-		Left:        "│",
-		Right:       "│",
-		TopLeft:     "╭",
-		TopRight:    "╮",
-		BottomLeft:  "╰",
-		BottomRight: "╯",
-	}
-
 	MainStyle = lipgloss.NewStyle().
 			Width(172).
 			Height(40)
 
 	DialogStyle = lipgloss.NewStyle().
-			Border(BorderRound, true).
+			Border(lipgloss.RoundedBorder(), true).
 			Align(lipgloss.Center).
 			Width(50).
 			Padding(3, 6).

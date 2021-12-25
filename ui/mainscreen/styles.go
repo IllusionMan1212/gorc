@@ -30,7 +30,6 @@ var (
 	MessagesStyle = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder(), true).
 			Width(ui.MainStyle.GetWidth()).
-			Height(ui.MainStyle.GetHeight() - InputBoxHeight).
 			BorderForeground(lipgloss.Color("105"))
 
 	InputBoxHeight = 1

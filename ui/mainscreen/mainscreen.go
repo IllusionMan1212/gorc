@@ -34,12 +34,13 @@ type State struct {
 	Reader   *bufio.Reader
 	Client   *client.Client
 	Viewport viewport.Model
+	Style    lipgloss.Style
 
-	inputBox InputState
+	InputBox InputState
 }
 
 func NewMainScreen() State {
-	newViewport := viewport.Model{Width: ui.MainStyle.GetWidth(), Height: ui.MainStyle.GetHeight() - InputBoxHeight}
+	newViewport := viewport.Model{}
 	newViewport.HighPerformanceRendering = false
 	newViewport.SetContent("")
 
@@ -48,13 +49,16 @@ func NewMainScreen() State {
 		Reader:   nil,
 		Client:   nil,
 		Viewport: newViewport,
-		inputBox: NewInputBox(),
+		Style:    MessagesStyle.Copy(),
+		InputBox: NewInputBox(),
 	}
 	return state
 }
 
 func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
 	case InitialReadMsg:
 		return s, s.readFromServer
@@ -76,14 +80,27 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 	}
 
 	s.Viewport, cmd = s.Viewport.Update(msg)
+	cmds = append(cmds, cmd)
 
-	return s, cmd
+	s.InputBox, cmd = s.InputBox.Update(msg)
+	cmds = append(cmds, cmd)
+
+	return s, tea.Batch(cmds...)
+}
+
+func (s *State) SetSize(width, height int) {
+	s.InputBox.SetSize(width)
+	s.Viewport.Width = width - s.Style.GetVerticalFrameSize()
+	// copying the existing style is important here otherwise we'll end up with artifacting
+	s.Style = s.Style.Copy().Width(width - s.Style.GetVerticalFrameSize())
+	s.Viewport.Height = height - s.InputBox.Style.GetHorizontalFrameSize() - s.Style.GetHorizontalFrameSize()
+	s.Style = s.Style.Copy().Height(height - s.InputBox.Style.GetHorizontalFrameSize() - s.Style.GetHorizontalFrameSize())
+	// we need to re-set the content because words wrap differently on different sizes
+	s.Viewport.SetContent(s.Content)
 }
 
 func (s State) View() string {
-	mainscreen := s.Viewport.View()
+	screen := lipgloss.JoinVertical(0, s.Style.Render(s.Viewport.View()), s.InputBox.View())
 
-	screen := lipgloss.JoinVertical(0, MessagesStyle.Render(mainscreen), s.inputBox.View())
-
-	return screen
+	return ui.MainStyle.Render(screen)
 }
