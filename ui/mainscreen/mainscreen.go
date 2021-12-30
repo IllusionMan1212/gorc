@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -29,28 +30,38 @@ import (
 	"github.com/illusionman1212/gorc/ui"
 )
 
+type Window int
+
+const (
+	Viewport = iota
+	InputBox
+)
+
 type State struct {
-	Content  string
-	Reader   *bufio.Reader
-	Client   *client.Client
-	Viewport viewport.Model
-	Style    lipgloss.Style
+	Content    string
+	Reader     *bufio.Reader
+	Client     *client.Client
+	Viewport   viewport.Model
+	Style      lipgloss.Style
+	FocusIndex Window
 
 	InputBox InputState
 }
 
 func NewMainScreen() State {
-	newViewport := viewport.Model{}
-	newViewport.HighPerformanceRendering = false
-	newViewport.SetContent("")
+	newViewport := viewport.Model{
+		HighPerformanceRendering: false,
+		Wrap:                     true,
+	}
 
 	state := State{
-		Content:  "",
-		Reader:   nil,
-		Client:   nil,
-		Viewport: newViewport,
-		Style:    MessagesStyle.Copy(),
-		InputBox: NewInputBox(),
+		Content:    "",
+		Reader:     nil,
+		Client:     nil,
+		Viewport:   newViewport,
+		Style:      MessagesStyle.Copy(),
+		FocusIndex: InputBox,
+		InputBox:   NewInputBox(),
 	}
 	return state
 }
@@ -77,13 +88,50 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		}
 
 		return s, s.readFromServer
+	case tea.KeyMsg:
+		key := msg.String()
+		switch key {
+		case "tab", "shift+tab":
+			if key == "tab" {
+				s.FocusIndex++
+			} else {
+				s.FocusIndex--
+			}
+
+			if s.FocusIndex > 1 {
+				s.FocusIndex = 0
+			} else if s.FocusIndex < 0 {
+				s.FocusIndex = 1
+			}
+
+			switch s.FocusIndex {
+			case Viewport:
+				s.Style = s.Style.Copy().BorderForeground(lipgloss.Color("105"))
+				s.InputBox.Style = s.InputBox.Style.Copy().BorderForeground(lipgloss.Color("#EEE"))
+
+				s.InputBox.Input.Blur()
+			case InputBox:
+				s.Style = s.Style.Copy().BorderForeground(lipgloss.Color("#EEE"))
+				s.InputBox.Style = s.InputBox.Style.Copy().BorderForeground(lipgloss.Color("105"))
+
+				s.InputBox, cmd = s.InputBox.Update(msg)
+				cmds = append(cmds, cmd)
+				cmds = append(cmds, textinput.Blink)
+				s.InputBox.Input.Focus()
+			}
+
+			return s, tea.Batch(cmds...)
+		}
 	}
 
-	s.Viewport, cmd = s.Viewport.Update(msg)
-	cmds = append(cmds, cmd)
-
-	s.InputBox, cmd = s.InputBox.Update(msg)
-	cmds = append(cmds, cmd)
+	switch s.FocusIndex {
+	case Viewport:
+		s.Viewport, cmd = s.Viewport.Update(msg)
+		cmds = append(cmds, cmd)
+	case InputBox:
+		s.InputBox, cmd = s.InputBox.Update(msg)
+		cmds = append(cmds, cmd)
+	}
 
 	return s, tea.Batch(cmds...)
 }

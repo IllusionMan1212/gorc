@@ -30,22 +30,16 @@ type InputState struct {
 func NewInputBox() InputState {
 	input := textinput.NewModel()
 	input.Placeholder = "Send a message..."
-	// input.Focus()
-	state := InputState{input, InputboxStyle}
+	input.Focus()
+	state := InputState{input, InputboxStyle.Copy()}
 
 	return state
 }
 
 func (s InputState) Update(msg tea.Msg) (InputState, tea.Cmd) {
-	cmd := s.updateInputs(msg)
-	return s, cmd
-}
-
-func (s *InputState) updateInputs(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	s.Input, cmd = s.Input.Update(msg)
-
-	return cmd
+	return s, cmd
 }
 
 func (s *InputState) SetSize(width int) {

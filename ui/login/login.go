@@ -143,30 +143,30 @@ func (s State) View() string {
 		}
 	}
 
-	checkbox := &blurredCheckbox
+	checkbox := &BlurredCheckbox
 	// if the checkbox is focused
 	if s.FocusIndex == len(s.Inputs) {
-		checkbox = &focusedCheckbox
+		checkbox = &FocusedCheckbox
 		// if tls is enabled
 		if s.TLS {
-			checkbox = &focusedCheckedCheckbox
+			checkbox = &FocusedCheckboxChecked
 		}
 	}
 
 	// if the checkbox is not focused and tls is enabled
 	if s.FocusIndex != len(s.Inputs) && s.TLS {
-		checkbox = &blurredCheckedCheckbox
+		checkbox = &BlurredCheckboxChecked
 	}
 
 	fmt.Fprintf(&sb, "\n%s\n", *checkbox)
 
-	button := &blurredButton
+	button := &BlurredButton
 	if s.FocusIndex == len(s.Inputs)+1 {
-		button = &focusedButton
+		button = &FocusedButton
 	}
 	fmt.Fprintf(&sb, "\n%s\n", *button)
 
-	screen := lipgloss.JoinVertical(0, welcomeMsgStyle.Render(WelcomeMsg), ui.DialogStyle.Render(sb.String()))
+	screen := lipgloss.JoinVertical(0, WelcomeMsgStyle.Render(WelcomeMsg), ui.DialogStyle.Render(sb.String()))
 
 	final := lipgloss.Place(ui.MainStyle.GetWidth(), ui.MainStyle.GetHeight(), lipgloss.Center, lipgloss.Top, screen)
 

@@ -33,18 +33,18 @@ const WelcomeMsg = `
 `
 
 var (
-	welcomeMsgStyle = lipgloss.NewStyle().
+	WelcomeMsgStyle = lipgloss.NewStyle().
 			Padding(0, 5).
 			MarginBottom(5)
 
-	focusedButton = lipgloss.NewStyle().
+	FocusedButton = lipgloss.NewStyle().
 			Background(lipgloss.Color("105")).
 			Foreground(lipgloss.Color("255")).
 			MarginTop(1).
 			Padding(0, 2).
 			Align(lipgloss.Center).
 			Render("Connect")
-	blurredButton = lipgloss.NewStyle().
+	BlurredButton = lipgloss.NewStyle().
 			Background(lipgloss.Color("#809070")).
 			Foreground(lipgloss.Color("#EEEEEE")).
 			MarginTop(1).
@@ -52,22 +52,22 @@ var (
 			Align(lipgloss.Center).
 			Render("Connect")
 
-	focusedCheckbox = lipgloss.NewStyle().
+	FocusedCheckbox = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("105")).
 			MarginTop(1).
 			Render("[ ] Enable TLS")
 
-	blurredCheckbox = lipgloss.NewStyle().
+	BlurredCheckbox = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#EEEEEE")).
 			MarginTop(1).
 			Render("[ ] Enable TLS")
 
-	focusedCheckedCheckbox = lipgloss.NewStyle().
+	FocusedCheckboxChecked = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("105")).
 				MarginTop(1).
 				Render("[x] Enable TLS")
 
-	blurredCheckedCheckbox = lipgloss.NewStyle().
+	BlurredCheckboxChecked = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#EEEEEE")).
 				MarginTop(1).
 				Render("[x] Enable TLS")
