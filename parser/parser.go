@@ -17,6 +17,7 @@
 package parser
 
 import (
+	"regexp"
 	"strings"
 )
 
@@ -52,13 +53,16 @@ func parseTags(rawTags string) Tags {
 
 func ParseIRCMessage(line string) IRCMessage {
 	ircMessage := IRCMessage{}
+	multipleSpacesRegex := regexp.MustCompile("[^\\S\\t]+")
+	trailingParamRegex := regexp.MustCompile("[^\\S\\t]+:")
+	whitespaceRegex := regexp.MustCompile("^[^\\S\\t]+$")
 
 	if len(line) <= 0 {
 		return IRCMessage{}
 	}
 
 	if line[0] == '@' {
-		substrs := strings.SplitN(line, " ", 2)
+		substrs := multipleSpacesRegex.Split(line, 2)
 		tags := parseTags(substrs[0][1:])
 		ircMessage.Tags = tags
 
@@ -66,24 +70,25 @@ func ParseIRCMessage(line string) IRCMessage {
 	}
 
 	if line[0] == ':' {
-		substrs := strings.SplitN(line, " ", 2)
-		ircMessage.Source = substrs[0]
+		substrs := multipleSpacesRegex.Split(line, 2)
+		ircMessage.Source = substrs[0][1:]
 
 		line = substrs[1]
 	}
 
-	substrs := strings.SplitN(line, " ", 2)
+	substrs := multipleSpacesRegex.Split(line, 2)
 
+	// TODO: return error(??) if the irc message is malformed (i.e doesn't contain command)
 	ircMessage.Command = substrs[0]
 
-	// if parameters exist
-	if len(substrs) > 1 {
-		params := strings.SplitN(substrs[1], " :", 2)
+	// if parameters exist and it's not an empty string and it's not whitespace without ":"
+	if len(substrs) > 1 && len(substrs[1]) != 0 && !whitespaceRegex.MatchString(substrs[1]) {
+		params := trailingParamRegex.Split(substrs[1], 2)
 
-		parameters := strings.Split(params[0], " ")
-		// TODO: parameters can be empty. this is denoted by a ":"
+		parameters := multipleSpacesRegex.Split(params[0], -1)
 
 		// if there's a trailing parameter
+		// this parses empty params as well
 		if len(params) > 1 {
 			parameters = append(parameters, params[1])
 		}
