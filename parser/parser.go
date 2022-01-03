@@ -93,6 +93,11 @@ func ParseIRCMessage(line string) IRCMessage {
 			parameters = append(parameters, params[1])
 		}
 
+		// if we have 1 param and it starts with a colon
+		if len(parameters) == 1 && parameters[0][0] == ':' {
+			parameters[0] = parameters[0][1:]
+		}
+
 		ircMessage.Parameters = parameters
 	}
 

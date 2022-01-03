@@ -89,17 +89,29 @@ func (c Client) SendCommand(cmd string, params ...string) {
 	}
 
 	paramsString := ""
-	if len(params) > 0 {
-		paramsString = " " + strings.Join(params, " ")
-	}
 
-	// if we have more than 1 param then replace the last param's space with a " :"
+	// if we have more than 1 param
 	if len(params) > 1 {
-		i := strings.LastIndex(paramsString, " ")
-		paramsString = paramsString[:i] + strings.Replace(paramsString[i:], " ", " :", 1)
-		// if we have more exactly 1 param and it contains spaces, we prepend colon to the param
-	} else if len(params) == 1 && strings.Contains(params[0], " ") {
-		paramsString = ":" + paramsString
+		lastParam := params[len(params)-1]
+		// if the last param is a trailing param
+		// we prepend a colon to it
+		if strings.Contains(lastParam, " ") {
+			lastParam = " :" + lastParam
+		} else {
+			lastParam = " " + lastParam
+		}
+
+		paramsString = " " + strings.Join(params[:len(params)-1], " ")
+		paramsString += lastParam
+
+		// if we have exactly 1 param
+	} else if len(params) == 1 {
+		// if this 1 param contains spaces, we prepend a colon
+		if strings.Contains(params[0], " ") {
+			paramsString = " :" + params[0]
+		} else {
+			paramsString = " " + params[0]
+		}
 	}
 
 	if c.TlsConn != nil {

@@ -83,7 +83,7 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		// TODO: handle different commands
 		switch message.Command {
 		case "PING":
-			s.Client.SendCommand("PONG")
+			s.Client.SendCommand("PONG", message.Parameters[0])
 			break
 		}
 
