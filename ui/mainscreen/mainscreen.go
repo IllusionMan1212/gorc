@@ -45,10 +45,14 @@ type State struct {
 	Style      lipgloss.Style
 	FocusIndex Window
 
+	// a channel could be either a server channel
+	// or a username of a user
+	CurrentChannel string
+
 	InputBox InputState
 }
 
-func NewMainScreen() State {
+func NewMainScreen(client *client.Client) State {
 	newViewport := viewport.Model{
 		HighPerformanceRendering: false,
 		Wrap:                     true,
@@ -57,11 +61,11 @@ func NewMainScreen() State {
 	state := State{
 		Content:    "",
 		Reader:     nil,
-		Client:     nil,
+		Client:     client,
 		Viewport:   newViewport,
 		Style:      MessagesStyle.Copy(),
 		FocusIndex: InputBox,
-		InputBox:   NewInputBox(),
+		InputBox:   NewInputBox(client),
 	}
 	return state
 }
@@ -75,17 +79,14 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		return s, s.readFromServer
 	case ReceivedIRCCommandMsg:
 		message := parser.ParseIRCMessage(msg.Msg)
-		fullMsg := fmt.Sprintf("%s %s %s %s", message.Tags, message.Source, message.Command, strings.Join(message.Parameters, " "))
-		s.Content += fullMsg
+		s.HandleCommand(message)
+
+		return s, s.readFromServer
+	case SendPrivMsg:
+		s.Content += msg.Msg + client.CRLF
+		s.Client.SendCommand("PRIVMSG", s.CurrentChannel, msg.Msg)
 
 		s.Viewport.SetContent(s.Content)
-
-		// TODO: handle different commands
-		switch message.Command {
-		case "PING":
-			s.Client.SendCommand("PONG", message.Parameters[0])
-			break
-		}
 
 		return s, s.readFromServer
 	case tea.KeyMsg:
@@ -145,6 +146,20 @@ func (s *State) SetSize(width, height int) {
 	s.Style = s.Style.Copy().Height(height - s.InputBox.Style.GetHorizontalFrameSize() - s.Style.GetHorizontalFrameSize())
 	// we need to re-set the content because words wrap differently on different sizes
 	s.Viewport.SetContent(s.Content)
+}
+
+func (s *State) HandleCommand(msg parser.IRCMessage) {
+	fullMsg := fmt.Sprintf("%s %s %s %s", msg.Tags, msg.Source, msg.Command, strings.Join(msg.Parameters, " "))
+	s.Content += fullMsg
+
+	s.Viewport.SetContent(s.Content)
+
+	// TODO: handle different commands
+	switch msg.Command {
+	case "PING":
+		s.Client.SendCommand("PONG", msg.Parameters[0])
+		break
+	}
 }
 
 func (s State) View() string {

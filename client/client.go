@@ -34,8 +34,7 @@ type Client struct {
 
 const CRLF = "\r\n"
 
-func NewClient(host string, port string, tlsEnabled bool) *Client {
-	// TODO: distinguish between secure and insecure connections
+func NewClient(host string, port string, tlsEnabled bool) Client {
 	addr := fmt.Sprintf("%s:%s", host, port)
 
 	if tlsEnabled {
@@ -46,7 +45,7 @@ func NewClient(host string, port string, tlsEnabled bool) *Client {
 			log.Fatal(err)
 		}
 
-		return &Client{
+		return Client{
 			TlsConn: conn,
 			TcpConn: nil,
 		}
@@ -62,7 +61,7 @@ func NewClient(host string, port string, tlsEnabled bool) *Client {
 		log.Fatal(err)
 	}
 
-	return &Client{
+	return Client{
 		TlsConn: nil,
 		TcpConn: conn,
 	}

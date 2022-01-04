@@ -20,23 +20,41 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/illusionman1212/gorc/client"
 )
 
 type InputState struct {
-	Input textinput.Model
-	Style lipgloss.Style
+	Input  textinput.Model
+	Style  lipgloss.Style
+	Client *client.Client
 }
 
-func NewInputBox() InputState {
+func NewInputBox(client *client.Client) InputState {
 	input := textinput.NewModel()
 	input.Placeholder = "Send a message..."
 	input.Focus()
-	state := InputState{input, InputboxStyle.Copy()}
+	state := InputState{
+		Input:  input,
+		Style:  InputboxStyle.Copy(),
+		Client: client,
+	}
 
 	return state
 }
 
 func (s InputState) Update(msg tea.Msg) (InputState, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		key := msg.String()
+		switch key {
+		case "enter":
+			value := s.Input.Value()
+			s.Input.Reset()
+
+			return s, s.SendingPrivMsg(value)
+		}
+	}
+
 	var cmd tea.Cmd
 	s.Input, cmd = s.Input.Update(msg)
 	return s, cmd

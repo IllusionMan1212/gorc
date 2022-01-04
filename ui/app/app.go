@@ -35,27 +35,29 @@ const (
 )
 
 type UI struct {
-	currentScreen Screen
-	login         login.State
-	mainScreen    mainscreen.State
+	CurrentScreen Screen
+	Login         login.State
+	MainScreen    mainscreen.State
 }
 
 type State struct {
-	ui     UI
-	client *client.Client
+	UI     UI
+	Client *client.Client
 }
 
-func initialUiState() UI {
+func initialUiState(client *client.Client) UI {
 	return UI{
-		login:      login.NewLogin(),
-		mainScreen: mainscreen.NewMainScreen(),
+		Login:      login.NewLogin(),
+		MainScreen: mainscreen.NewMainScreen(client),
 	}
 }
 
 func InitialState() State {
+	client := &client.Client{}
+
 	s := State{
-		client: &client.Client{},
-		ui:     initialUiState(),
+		Client: client,
+		UI:     initialUiState(client),
 	}
 
 	return s
@@ -70,14 +72,7 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
-			// TODO: clean up and gracefully quit by leaving the IRC channel/server and then quit bubble.
-			if s.client.TlsConn != nil {
-				s.client.TlsConn.Close()
-			}
-			if s.client.TcpConn != nil {
-				s.client.TcpConn.Close()
-			}
-			return s, tea.Quit
+			return s, s.Quit
 		}
 
 	case tea.WindowSizeMsg:
@@ -85,45 +80,44 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Width(msg.Width).
 			Height(msg.Height)
 
-		s.ui.mainScreen.SetSize(msg.Width, msg.Height)
+		s.UI.MainScreen.SetSize(msg.Width, msg.Height)
 
 		return s, nil
 	case login.ConnectingMsg:
-		host := s.ui.login.Inputs[0].Value()
-		port := s.ui.login.Inputs[1].Value()
-		channel := s.ui.login.Inputs[2].Value()
-		nickname := s.ui.login.Inputs[3].Value()
-		password := s.ui.login.Inputs[4].Value()
-		tlsEnabled := s.ui.login.TLS
+		host := s.UI.Login.Inputs[0].Value()
+		port := s.UI.Login.Inputs[1].Value()
+		channel := s.UI.Login.Inputs[2].Value()
+		nickname := s.UI.Login.Inputs[3].Value()
+		password := s.UI.Login.Inputs[4].Value()
+		tlsEnabled := s.UI.Login.TLS
 
-		s.ui.currentScreen = MainScreen
+		s.UI.CurrentScreen = MainScreen
+		s.UI.MainScreen.CurrentChannel = channel
 
 		// create new client with the provided host and port
-		client := client.NewClient(host, port, tlsEnabled)
-		client.Register(nickname, password, channel)
-		s.client = client
-		s.ui.mainScreen.Client = client
+		(*s.Client) = client.NewClient(host, port, tlsEnabled)
+		s.Client.Register(nickname, password, channel)
 
 		if tlsEnabled {
-			r := bufio.NewReaderSize(client.TlsConn, 512)
-			s.ui.mainScreen.Reader = r
+			r := bufio.NewReaderSize(s.Client.TlsConn, 512)
+			s.UI.MainScreen.Reader = r
 		} else {
-			r := bufio.NewReaderSize(client.TcpConn, 512)
-			s.ui.mainScreen.Reader = r
+			r := bufio.NewReaderSize(s.Client.TcpConn, 512)
+			s.UI.MainScreen.Reader = r
 		}
 
 		return s, mainscreen.InitialRead
 	}
 
 	// switch between which screen is currently active and update its state
-	switch s.ui.currentScreen {
+	switch s.UI.CurrentScreen {
 	case Login:
-		state, cmd := s.ui.login.Update(msg)
-		s.ui.login = state
+		state, cmd := s.UI.Login.Update(msg)
+		s.UI.Login = state
 		return s, cmd
 	case MainScreen:
-		state, cmd := s.ui.mainScreen.Update(msg)
-		s.ui.mainScreen = state
+		state, cmd := s.UI.MainScreen.Update(msg)
+		s.UI.MainScreen = state
 		return s, cmd
 	}
 
@@ -132,11 +126,11 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (s State) View() string {
 	// switch between which screen is currently active and render it.
-	switch s.ui.currentScreen {
+	switch s.UI.CurrentScreen {
 	case Login:
-		return s.ui.login.View()
+		return s.UI.Login.View()
 	case MainScreen:
-		return s.ui.mainScreen.View()
+		return s.UI.MainScreen.View()
 	}
 
 	return "Error: this screen shouldn't ever show"

@@ -14,39 +14,19 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see https://www.gnu.org/licenses.
 
-package mainscreen
+package app
 
-import (
-	"log"
+import tea "github.com/charmbracelet/bubbletea"
 
-	tea "github.com/charmbracelet/bubbletea"
-)
-
-type InitialReadMsg struct{}
-
-func InitialRead() tea.Msg {
-	return InitialReadMsg{}
-}
-
-type ReceivedIRCCommandMsg struct {
-	Msg string
-}
-
-func (s State) readFromServer() tea.Msg {
-	msg, err := s.Reader.ReadString('\n')
-	if err != nil {
-		log.Print(err)
+func (s *State) Quit() tea.Msg {
+	if s.Client.TlsConn != nil {
+		s.Client.SendCommand("QUIT")
+		s.Client.TlsConn.Close()
+	}
+	if s.Client.TcpConn != nil {
+		s.Client.SendCommand("QUIT")
+		s.Client.TcpConn.Close()
 	}
 
-	return ReceivedIRCCommandMsg{Msg: msg}
-}
-
-type SendPrivMsg struct {
-	Msg string
-}
-
-func (s InputState) SendingPrivMsg(msg string) tea.Cmd {
-	return func() tea.Msg {
-		return SendPrivMsg{Msg: msg}
-	}
+	return tea.Quit()
 }
