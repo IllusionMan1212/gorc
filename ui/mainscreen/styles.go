@@ -29,7 +29,11 @@ var (
 			BorderForeground(lipgloss.Color("105"))
 	MessagesStyle = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder(), true).
-			Width(ui.MainStyle.GetWidth()).
+			Width(ui.MainStyle.GetWidth() * 8 / 10).
+			BorderForeground(lipgloss.Color("#EEE"))
+	SidePanelStyle = lipgloss.NewStyle().
+			Border(lipgloss.NormalBorder(), true).
+			Width(ui.MainStyle.GetWidth() * 2 / 10).
 			BorderForeground(lipgloss.Color("#EEE"))
 
 	InputBoxHeight = 1

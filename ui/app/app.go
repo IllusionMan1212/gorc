@@ -92,21 +92,18 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		tlsEnabled := s.UI.Login.TLS
 
 		s.UI.CurrentScreen = MainScreen
-		s.UI.MainScreen.CurrentChannel = channel
 
 		// create new client with the provided host and port
 		(*s.Client) = client.NewClient(host, port, tlsEnabled)
 		s.Client.Register(nickname, password, channel)
 
-		if tlsEnabled {
-			r := bufio.NewReaderSize(s.Client.TlsConn, 512)
-			s.UI.MainScreen.Reader = r
-		} else {
-			r := bufio.NewReaderSize(s.Client.TcpConn, 512)
-			s.UI.MainScreen.Reader = r
-		}
+		// 512 bytes as a base + 8192 additional bytes for tags
+		r := bufio.NewReaderSize(s.Client.TcpConn, 8192+512)
+		s.UI.MainScreen.ConnReader = r
 
-		return s, mainscreen.InitialRead
+		go s.UI.MainScreen.ReadLoop()
+
+		return s, textinput.Blink
 	}
 
 	// switch between which screen is currently active and update its state

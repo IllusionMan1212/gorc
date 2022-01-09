@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see https://www.gnu.org/licenses.
 
-package main
+package commands
 
 /* --- IRC Ports --- */
 const (
@@ -71,6 +71,7 @@ const (
 	USERHOST = "USERHOST" // Get information about user with a given nickname. can take up to 5 nickanmes.
 
 	// Left behind...
+	PING = "PING"
 	PONG = "PONG" // Respond to a server PING
 )
 

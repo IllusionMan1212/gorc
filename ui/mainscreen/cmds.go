@@ -18,27 +18,29 @@ package mainscreen
 
 import (
 	"log"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/illusionman1212/gorc/parser"
 )
 
-type InitialReadMsg struct{}
+func (s *State) ReadLoop() {
+	for {
+		select {
+		case <-s.Client.Quit:
+			return
+		default:
+			msg, err := s.ConnReader.ReadString('\n')
+			if err != nil {
+				log.Fatal(err)
+			}
 
-func InitialRead() tea.Msg {
-	return InitialReadMsg{}
-}
-
-type ReceivedIRCCommandMsg struct {
-	Msg string
-}
-
-func (s State) readFromServer() tea.Msg {
-	msg, err := s.Reader.ReadString('\n')
-	if err != nil {
-		log.Print(err)
+			msg = strings.Replace(msg, "\r\n", "", 1)
+			if ircMessage, valid := parser.ParseIRCMessage(msg); valid {
+				s.HandleCommand(ircMessage)
+			}
+		}
 	}
-
-	return ReceivedIRCCommandMsg{Msg: msg}
 }
 
 type SendPrivMsg struct {

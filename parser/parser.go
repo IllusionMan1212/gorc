@@ -51,14 +51,16 @@ func parseTags(rawTags string) Tags {
 	return tags
 }
 
-func ParseIRCMessage(line string) IRCMessage {
+func ParseIRCMessage(line string) (IRCMessage, bool) {
 	ircMessage := IRCMessage{}
 	multipleSpacesRegex := regexp.MustCompile("[^\\S\\t]+")
 	trailingParamRegex := regexp.MustCompile("[^\\S\\t]+:")
 	whitespaceRegex := regexp.MustCompile("^[^\\S\\t]+$")
 
 	if len(line) <= 0 {
-		return IRCMessage{}
+		// TODO: do something here ???
+		// log.Println("empty message")
+		return IRCMessage{}, false
 	}
 
 	if line[0] == '@' {
@@ -94,12 +96,12 @@ func ParseIRCMessage(line string) IRCMessage {
 		}
 
 		// if we have 1 param and it starts with a colon
-		if len(parameters) == 1 && parameters[0][0] == ':' {
-			parameters[0] = parameters[0][1:]
+		if len(params) == 1 && params[0][0] == ':' {
+			parameters[0] = params[0][1:]
 		}
 
 		ircMessage.Parameters = parameters
 	}
 
-	return ircMessage
+	return ircMessage, true
 }

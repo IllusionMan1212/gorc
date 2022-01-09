@@ -29,17 +29,15 @@ type InputState struct {
 	Client *client.Client
 }
 
-func NewInputBox(client *client.Client) InputState {
+func NewInputBox() InputState {
 	input := textinput.NewModel()
 	input.Placeholder = "Send a message..."
 	input.Focus()
-	state := InputState{
-		Input:  input,
-		Style:  InputboxStyle.Copy(),
-		Client: client,
-	}
 
-	return state
+	return InputState{
+		Input: input,
+		Style: InputboxStyle.Copy(),
+	}
 }
 
 func (s InputState) Update(msg tea.Msg) (InputState, tea.Cmd) {
@@ -49,6 +47,10 @@ func (s InputState) Update(msg tea.Msg) (InputState, tea.Cmd) {
 		switch key {
 		case "enter":
 			value := s.Input.Value()
+			if len(value) == 0 {
+				return s, nil
+			}
+
 			s.Input.Reset()
 
 			return s, s.SendingPrivMsg(value)
