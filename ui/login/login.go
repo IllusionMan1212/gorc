@@ -39,7 +39,7 @@ func NewLogin() State {
 
 	var t textinput.Model
 	for i := range ls.Inputs {
-		t = textinput.NewModel()
+		t = textinput.New()
 		t.CursorStyle = ui.CursorStyle
 		t.Prompt = "| "
 

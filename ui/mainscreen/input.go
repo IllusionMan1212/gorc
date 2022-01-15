@@ -30,7 +30,7 @@ type InputState struct {
 }
 
 func NewInputBox() InputState {
-	input := textinput.NewModel()
+	input := textinput.New()
 	input.Placeholder = "Send a message..."
 	input.Focus()
 

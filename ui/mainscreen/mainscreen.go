@@ -51,16 +51,14 @@ type State struct {
 }
 
 func NewMainScreen(client *client.Client) State {
-	newViewport := &viewport.Model{
-		HighPerformanceRendering: false,
-		Wrap:                     viewport.Wrap,
-		Style:                    MessagesStyle.Copy(),
-	}
+	newViewport := viewport.New(0, 0)
+	newViewport.Wrap = viewport.Wrap
+	newViewport.Style = MessagesStyle.Copy()
 
 	return State{
 		ConnReader: nil,
 		Client:     client,
-		Viewport:   newViewport,
+		Viewport:   &newViewport,
 		FocusIndex: InputBox,
 		InputBox:   NewInputBox(),
 		SidePanel:  NewSidePanel(client),
