@@ -24,10 +24,26 @@ import (
 )
 
 func main() {
-	if err := tea.NewProgram(app.InitialState(),
+	_app := app.InitialState()
+
+	p := tea.NewProgram(
+		_app,
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),
-	).Start(); err != nil {
+	)
+
+	_app.Client.Tea = p
+
+	f, err := tea.LogToFile("gorc.log", "gorc")
+	defer f.Close()
+
+	if err != nil {
 		log.Fatal(err)
+	}
+
+	err = p.Start()
+
+	if err != nil {
+		log.Println(err)
 	}
 }

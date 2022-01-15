@@ -18,6 +18,7 @@ package mainscreen
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/viewport"
@@ -27,34 +28,91 @@ import (
 )
 
 type SidePanelState struct {
-	// TODO: make a viewport and use that to display the names
-	// OR: we could use a list
-	Style    lipgloss.Style
-	Nicks    []string
+	Client   *client.Client
 	Viewport viewport.Model
-	Content  string
+	Focused  bool
+}
+
+func (s *SidePanelState) getHeader() string {
+	separator := strings.Repeat("—", s.Viewport.Width) + "\n"
+	header := fmt.Sprintf("Users in this channel (%d)\n", len(s.Client.Channels[s.Client.ActiveChannel].Users)) + separator
+
+	return header
+}
+
+func (s *SidePanelState) getLatestNicks() []string {
+	nicks := make([]string, 0)
+
+	for nick, user := range s.Client.Channels[s.Client.ActiveChannel].Users {
+		_nick := user.Prefix + nick
+		nicks = append(nicks, _nick)
+	}
+
+	return nicks
 }
 
 func NewSidePanel(client *client.Client) *SidePanelState {
 	return &SidePanelState{
-		Style: SidePanelStyle.Copy(),
+		Client: client,
+		Viewport: viewport.Model{
+			HighPerformanceRendering: false,
+			Wrap:                     viewport.Wrap,
+			Style:                    SidePanelStyle.Copy(),
+		},
 	}
 }
 
 func (s SidePanelState) Update(msg tea.Msg) (SidePanelState, tea.Cmd) {
-	return s, nil
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
+	switch msg.(type) {
+	case SwitchChannelsMsg:
+		s.UpdateNicks()
+		return s, nil
+	}
+
+	if s.Focused {
+		s.Viewport, cmd = s.Viewport.Update(msg)
+		cmds = append(cmds, cmd)
+	}
+
+	return s, tea.Batch(cmds...)
+}
+
+func (s *SidePanelState) Focus() {
+	s.Focused = true
+	s.Viewport.Style = s.Viewport.Style.BorderForeground(lipgloss.Color("105"))
+}
+
+func (s *SidePanelState) Blur() {
+	s.Focused = false
+	s.Viewport.Style = s.Viewport.Style.BorderForeground(lipgloss.Color("#EEE"))
+}
+
+func (s *SidePanelState) UpdateNicks() {
+	header := s.getHeader()
+	nicks := s.getLatestNicks()
+
+	s.Viewport.SetContent(header + strings.Join(nicks, "\n"))
 }
 
 func (s *SidePanelState) SetSize(width, height, inputboxHeight int) {
-	s.Style = s.Style.Copy().Width(width * 2 / 10)
-	// -1 is for some extra invisible margin or padding or whatever (idk what it is tbh)
-	s.Style = s.Style.Copy().Height(height - inputboxHeight - s.Style.GetVerticalBorderSize() - 1)
+	// We ceil here because width is an int and some fractions are lost
+	// -1 is for some extra invisible margin or padding between the sidepanel and the inputbox
+	newWidth := int(math.Ceil(math.Ceil((float64(width) * 2.0 / 10.0)) - float64(s.Viewport.Style.GetHorizontalFrameSize())))
+	newHeight := height - inputboxHeight - s.Viewport.Style.GetVerticalFrameSize() - 1
+
+	s.Viewport.Style = s.Viewport.Style.Width(newWidth)
+	s.Viewport.Style = s.Viewport.Style.Height(newHeight)
+
+	s.Viewport.Width = newWidth
+	s.Viewport.Height = newHeight
+
+	// on resize recalculate the width and re-set the viewport contents
+	s.UpdateNicks()
 }
 
 func (s SidePanelState) View() string {
-	separator := strings.Repeat("-", s.Style.GetWidth()) + "\n"
-	header := fmt.Sprintf("Users in this channel (%d)\n", len(s.Nicks)) + separator
-	nicks := strings.Join(s.Nicks, "\n")
-
-	return s.Style.Render(header + nicks)
+	return s.Viewport.View()
 }

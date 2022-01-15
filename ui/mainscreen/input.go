@@ -62,7 +62,20 @@ func (s InputState) Update(msg tea.Msg) (InputState, tea.Cmd) {
 	return s, cmd
 }
 
+func (s *InputState) Focus() {
+	s.Input.Focus()
+	s.Style = s.Style.Copy().BorderForeground(lipgloss.Color("105"))
+}
+
+func (s *InputState) Blur() {
+	s.Input.Blur()
+	s.Style = s.Style.Copy().BorderForeground(lipgloss.Color("#EEE"))
+}
+
 func (s *InputState) SetSize(width int) {
+	// set a max width for the input field so it scrolls horizontally instead of wrapping to a newline
+	// -4 for input prompt char, cursor, and some extra magical padding
+	s.Input.Width = width - s.Style.GetHorizontalFrameSize() - 4
 	s.Style = s.Style.Width(width - s.Style.GetHorizontalBorderSize())
 }
 

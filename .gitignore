@@ -3,3 +3,6 @@ gorc
 
 # vscode stuff
 .vscode
+
+# log file
+gorc.log

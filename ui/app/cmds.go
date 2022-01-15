@@ -19,13 +19,8 @@ package app
 import tea "github.com/charmbracelet/bubbletea"
 
 func (s *State) Quit() tea.Msg {
-	if s.Client.Quit != nil {
-		close(s.Client.Quit)
-	}
-
 	if s.Client.TcpConn != nil {
 		s.Client.SendCommand("QUIT")
-		s.Client.TcpConn.Close()
 	}
 
 	return tea.Quit()

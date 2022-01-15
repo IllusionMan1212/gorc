@@ -19,6 +19,7 @@ package mainscreen
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -34,7 +35,8 @@ import (
 type Window int
 
 const (
-	Viewport = iota
+	Viewport Window = iota
+	SidePanel
 	InputBox
 )
 
@@ -42,7 +44,6 @@ type State struct {
 	ConnReader *bufio.Reader
 	Client     *client.Client
 	Viewport   *viewport.Model
-	Style      lipgloss.Style
 	FocusIndex Window
 
 	InputBox  InputState
@@ -52,14 +53,14 @@ type State struct {
 func NewMainScreen(client *client.Client) State {
 	newViewport := &viewport.Model{
 		HighPerformanceRendering: false,
-		Wrap:                     true,
+		Wrap:                     viewport.Wrap,
+		Style:                    MessagesStyle.Copy(),
 	}
 
 	return State{
 		ConnReader: nil,
 		Client:     client,
 		Viewport:   newViewport,
-		Style:      MessagesStyle.Copy(),
 		FocusIndex: InputBox,
 		InputBox:   NewInputBox(),
 		SidePanel:  NewSidePanel(client),
@@ -71,6 +72,9 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case ReceivedIRCMsgMsg:
+		s.Viewport.GotoBottom()
+		return s, nil
 	case SendPrivMsg:
 		// for sending slash commands
 		// TODO: make this better
@@ -83,21 +87,28 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 			}
 			if strings.ToUpper(command) == commands.JOIN {
 				s.Client.ActiveChannel = params[0]
-				s.Client.Channels[params[0]] = client.Channel{}
-				s.Client.SendCommand(command, params...)
-				return s, nil
+				if _, ok := s.Client.Channels[params[0]]; !ok {
+					s.Client.Channels[params[0]] = client.Channel{
+						Users: make(map[string]client.User),
+					}
+				}
+				s.Client.SendCommand(commands.JOIN, params...)
+				return s, SwitchChannels
 			}
 			s.Client.SendCommand(command, params...)
 		} else {
-			// TODO: dont send command when activechannel == c.host
-			fullMsg := s.Client.Nickname + ": " + msg.Msg
-			if c, ok := s.Client.Channels[s.Client.ActiveChannel]; ok {
-				c.History += fullMsg + client.CRLF
+			if s.Client.ActiveChannel != s.Client.Host {
+				fullMsg := s.Client.Nickname + ": " + msg.Msg
+				if c, ok := s.Client.Channels[s.Client.ActiveChannel]; ok {
+					c.History += fullMsg + client.CRLF
 
-				s.Client.Channels[s.Client.ActiveChannel] = c
+					s.Client.Channels[s.Client.ActiveChannel] = c
+				}
+				// TODO: make sure to only append the message to the history if server sends back no errors
+				s.Client.SendCommand(commands.PRIVMSG, s.Client.ActiveChannel, msg.Msg)
+				s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
+				s.Viewport.GotoBottom()
 			}
-			s.Client.SendCommand(commands.PRIVMSG, s.Client.ActiveChannel, msg.Msg)
-			s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
 		}
 
 		return s, nil
@@ -111,34 +122,31 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 				s.FocusIndex--
 			}
 
-			if s.FocusIndex > 1 {
+			if s.FocusIndex > 2 {
 				s.FocusIndex = 0
 			} else if s.FocusIndex < 0 {
-				s.FocusIndex = 1
+				s.FocusIndex = 2
 			}
 
 			switch s.FocusIndex {
 			case Viewport:
-				s.Style = s.Style.Copy().BorderForeground(lipgloss.Color("105"))
-				s.InputBox.Style = s.InputBox.Style.Copy().BorderForeground(lipgloss.Color("#EEE"))
-
-				s.InputBox.Input.Blur()
+				s.Focus()
+				s.InputBox.Blur()
+				s.SidePanel.Blur()
 			case InputBox:
-				s.Style = s.Style.Copy().BorderForeground(lipgloss.Color("#EEE"))
-				s.InputBox.Style = s.InputBox.Style.Copy().BorderForeground(lipgloss.Color("105"))
-
-				s.InputBox, cmd = s.InputBox.Update(msg)
-				cmds = append(cmds, cmd)
 				cmds = append(cmds, textinput.Blink)
-				s.InputBox.Input.Focus()
+				s.Blur()
+				s.InputBox.Focus()
+				s.SidePanel.Blur()
+			case SidePanel:
+				s.Blur()
+				s.InputBox.Blur()
+				s.SidePanel.Focus()
 			}
 
 			return s, tea.Batch(cmds...)
 		}
 	}
-
-	// TODO: maybe we still need this, not sure
-	// s.Viewport.SetContent(s.Client.ActiveChannel.History)
 
 	switch s.FocusIndex {
 	case Viewport:
@@ -149,22 +157,35 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
+	*s.SidePanel, cmd = s.SidePanel.Update(msg)
+	cmds = append(cmds, cmd)
+
 	return s, tea.Batch(cmds...)
+}
+
+func (s *State) Focus() {
+	s.Viewport.Style = s.Viewport.Style.Copy().BorderForeground(lipgloss.Color("105"))
+}
+func (s *State) Blur() {
+	s.Viewport.Style = s.Viewport.Style.Copy().BorderForeground(lipgloss.Color("#EEE"))
 }
 
 func (s *State) SetSize(width, height int) {
 	s.InputBox.SetSize(width)
-	s.SidePanel.SetSize(width, height, s.InputBox.Style.Copy().GetVerticalFrameSize())
+	s.SidePanel.SetSize(width, height, s.InputBox.Style.GetVerticalFrameSize())
 
-	// -1 is for some extra invisible margin or padding or whatever (idk what it is tbh)
-	newViewportWidth := (width * 8 / 10) - s.Style.GetHorizontalBorderSize() - 1
-	newViewportHeight := height - s.InputBox.Style.GetVerticalFrameSize() - s.Style.GetVerticalBorderSize() - 1
+	// We floor here because width is an int and some fractions are lost
+	// and also because we ceil the sidepanel's width
+	// -1 is for some extra invisible margin or padding between the main viewport and the inputbox
+	newWidth := int(math.Floor(float64(width)*8.0/10.0) - float64(s.Viewport.Style.GetHorizontalFrameSize()))
+	newHeight := height - s.InputBox.Style.GetVerticalFrameSize() - s.Viewport.Style.GetVerticalFrameSize() - 1
 
-	// copying the existing style is important here otherwise we'll end up with artifacting
-	s.Viewport.Width = newViewportWidth
-	s.Style = s.Style.Width(newViewportWidth)
-	s.Viewport.Height = newViewportHeight
-	s.Style = s.Style.Height(newViewportHeight)
+	s.Viewport.Width = newWidth
+	s.Viewport.Height = newHeight
+
+	s.Viewport.Style = s.Viewport.Style.Width(newWidth)
+	s.Viewport.Style = s.Viewport.Style.Height(newHeight)
+
 	// we need to re-set the content because words wrap differently on different sizes
 	s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
 }
@@ -173,15 +194,16 @@ func (s *State) HandleCommand(msg parser.IRCMessage) {
 	// TODO: handle different commands
 	switch msg.Command {
 	case commands.PING:
-		s.Client.SendCommand(commands.PONG, msg.Parameters[0])
+		token := msg.Parameters[0]
+		s.Client.SendCommand(commands.PONG, token)
 	case commands.PRIVMSG:
 		nick := strings.SplitN(msg.Source, "!", 2)[0]
 		channel := msg.Parameters[0]
 		msgContent := msg.Parameters[1]
-		fullMsg := fmt.Sprintf("%s: %s", nick, msgContent)
+		privMsg := fmt.Sprintf("%s: %s", nick, msgContent)
 
 		if c, ok := s.Client.Channels[channel]; ok {
-			c.History += fullMsg + client.CRLF
+			c.History += privMsg + client.CRLF
 
 			s.Client.Channels[channel] = c
 		}
@@ -190,40 +212,81 @@ func (s *State) HandleCommand(msg parser.IRCMessage) {
 		nick := strings.SplitN(msg.Source, "!", 2)[0]
 		channel := msg.Parameters[0]
 
-		fullMsg := fmt.Sprintf("== %s has joined", nick)
+		joinMsg := fmt.Sprintf("== %s has joined", nick)
 		if c, ok := s.Client.Channels[channel]; ok {
-			c.History += fullMsg + client.CRLF
+			c.History += joinMsg + client.CRLF
+			if _, exists := c.Users[nick]; !exists {
+				c.Users[nick] = client.User{}
+			}
 
 			s.Client.Channels[channel] = c
 		}
+
+		if channel == s.Client.ActiveChannel {
+			s.SidePanel.UpdateNicks()
+		}
+
 		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
 	case commands.QUIT:
 		nick := strings.SplitN(msg.Source, "!", 2)[0]
 		reason := msg.Parameters[0]
-		fullMsg := fmt.Sprintf("== %s has quit (%s)", nick, reason)
-		if c, ok := s.Client.Channels[s.Client.ActiveChannel]; ok {
-			c.History += fullMsg + client.CRLF
+		quitMsg := fmt.Sprintf("== %s has quit (%s)", nick, reason)
 
-			s.Client.Channels[s.Client.ActiveChannel] = c
+		for chanName, channel := range s.Client.Channels {
+			channel.History += quitMsg + client.CRLF
+			delete(channel.Users, nick)
+
+			s.Client.Channels[chanName] = channel
 		}
+
+		s.SidePanel.UpdateNicks()
+		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
+	case commands.PART:
+		nick := strings.SplitN(msg.Source, "!", 2)[0]
+		channel := msg.Parameters[0]
+		reason := ""
+		if len(msg.Parameters) > 1 {
+			reason = msg.Parameters[1]
+		}
+
+		partMsg := fmt.Sprintf("== %s has left %s (%s)", nick, channel, reason)
+		if c, ok := s.Client.Channels[channel]; ok {
+			c.History += partMsg + client.CRLF
+			delete(c.Users, nick)
+
+			s.Client.Channels[channel] = c
+		}
+
+		s.SidePanel.UpdateNicks()
 		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
 	case commands.RPL_NAMREPLY:
-		// TODO: put the users into their respective channels
+		// TODO: do i need these
 		// client := msg.Parameters[0]
 		// chanSymbol := msg.Parameters[1]
-		// channel := msg.Parameters[2]
+		channel := msg.Parameters[2]
 		nicks := strings.Split(msg.Parameters[3], " ")
 
-		s.SidePanel.Nicks = append(s.SidePanel.Nicks, nicks...)
-	case commands.RPL_ENDOFNAMES:
-		fullMsg := fmt.Sprintf("%s %s %s %s", msg.Tags, msg.Source, msg.Command, strings.Join(msg.Parameters, " "))
-		if c, ok := s.Client.Channels[s.Client.ActiveChannel]; ok {
-			c.History += fullMsg + client.CRLF
+		if c, ok := s.Client.Channels[channel]; ok {
+			for _, nick := range nicks {
+				prefix := ""
+				_nick := nick
 
-			s.Client.Channels[s.Client.ActiveChannel] = c
+				if commands.UserPrefixes[string(nick[0])] {
+					prefix = string(nick[0])
+					_nick = nick[1:]
+				}
+
+				c.Users[_nick] = client.User{
+					Prefix: prefix,
+				}
+			}
 		}
 
-		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
+		if channel == s.Client.ActiveChannel {
+			s.SidePanel.UpdateNicks()
+		}
+	case commands.RPL_ENDOFNAMES:
+		// TODO: what do i do here lol
 	default:
 		fullMsg := fmt.Sprintf("%s %s %s %s", msg.Tags, msg.Source, msg.Command, strings.Join(msg.Parameters, " "))
 		if c, ok := s.Client.Channels[s.Client.ActiveChannel]; ok {
@@ -234,10 +297,14 @@ func (s *State) HandleCommand(msg parser.IRCMessage) {
 
 		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
 	}
+
+	// send a receivedIRCmsg tea message so the ui can update
+	// we also use this tea message to scroll the viewport down
+	s.Client.Tea.Send(ReceivedIRCMsg())
 }
 
 func (s State) View() string {
-	top := lipgloss.JoinHorizontal(lipgloss.Right, s.Style.Render(s.Viewport.View()), s.SidePanel.View())
+	top := lipgloss.JoinHorizontal(lipgloss.Right, s.Viewport.View(), s.SidePanel.View())
 	screen := lipgloss.JoinVertical(0, top, s.InputBox.View())
 
 	return ui.MainStyle.Render(screen)

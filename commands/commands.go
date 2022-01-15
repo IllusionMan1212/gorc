@@ -106,13 +106,13 @@ const (
 )
 
 /* --- Channel membership prefixes --- */
-const (
-	Founder   = "+q"
-	Protected = "+a"
-	Operator  = "@"
-	HalfOp    = "%"
-	Voice     = "+v"
-)
+var UserPrefixes = map[string]bool{
+	"~": true,
+	"&": true,
+	"@": true,
+	"%": true,
+	"+": true,
+}
 
 /* --- Numeric Replies --- */
 const (

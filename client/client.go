@@ -22,11 +22,13 @@ import (
 	"log"
 	"net"
 	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type User struct {
-	// Nickname of user
-	Nick string
+	// User prefix in channel
+	Prefix string
 }
 
 type Channel struct {
@@ -37,15 +39,15 @@ type Channel struct {
 	History string
 
 	// Users in this channel
-	Users []User
+	// The map key is the user's nickname
+	// and the user struct holds data about that user
+	// such as, prefixes in this channel and etc...
+	Users map[string]User
 }
 
 type Client struct {
 	// tcp connection
 	TcpConn net.Conn
-
-	// Channel to receive quit msg
-	Quit chan struct{}
 
 	Host          string
 	Port          string
@@ -53,11 +55,12 @@ type Client struct {
 	MOTD          string             // TODO:
 	Channels      map[string]Channel // TODO:
 	ActiveChannel string
+	Tea           *tea.Program
 }
 
 const CRLF = "\r\n"
 
-func NewClient(host string, port string, tlsEnabled bool) Client {
+func (s *Client) Initialize(host string, port string, tlsEnabled bool) {
 	addr := fmt.Sprintf("%s:%s", host, port)
 
 	if tlsEnabled {
@@ -68,14 +71,12 @@ func NewClient(host string, port string, tlsEnabled bool) Client {
 			log.Fatal(err)
 		}
 
-		return Client{
-			TcpConn:       conn,
-			Host:          host,
-			Port:          port,
-			Quit:          make(chan struct{}),
-			ActiveChannel: host,
-			Channels:      make(map[string]Channel),
-		}
+		s.TcpConn = conn
+		s.Host = host
+		s.Port = port
+		s.ActiveChannel = host
+		s.Channels = make(map[string]Channel)
+		return
 	}
 
 	addrTCP, err := net.ResolveTCPAddr("tcp", addr)
@@ -88,14 +89,11 @@ func NewClient(host string, port string, tlsEnabled bool) Client {
 		log.Fatal(err)
 	}
 
-	return Client{
-		TcpConn:       conn,
-		Host:          host,
-		Port:          port,
-		Quit:          make(chan struct{}),
-		ActiveChannel: host,
-		Channels:      make(map[string]Channel),
-	}
+	s.TcpConn = conn
+	s.Host = host
+	s.Port = port
+	s.ActiveChannel = host
+	s.Channels = make(map[string]Channel)
 }
 
 func (c *Client) Register(nick string, password string, channel string) {
@@ -112,11 +110,12 @@ func (c *Client) Register(nick string, password string, channel string) {
 	c.SendCommand("CAP", "END")
 	// joining a channel when registering is optional
 	if channel != "" {
-		c.SendCommand("JOIN", channel)
 		c.ActiveChannel = channel
-		c.Channels[c.ActiveChannel] = Channel{}
-	} else {
-		c.Channels[c.ActiveChannel] = Channel{}
+		c.SendCommand("JOIN", channel)
+	}
+
+	c.Channels[c.ActiveChannel] = Channel{
+		Users: make(map[string]User),
 	}
 }
 

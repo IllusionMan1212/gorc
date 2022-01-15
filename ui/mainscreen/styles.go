@@ -35,6 +35,4 @@ var (
 			Border(lipgloss.NormalBorder(), true).
 			Width(ui.MainStyle.GetWidth() * 2 / 10).
 			BorderForeground(lipgloss.Color("#EEE"))
-
-	InputBoxHeight = 1
 )

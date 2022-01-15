@@ -30,7 +30,7 @@ import (
 type Screen int
 
 const (
-	Login = iota
+	Login Screen = iota
 	MainScreen
 )
 
@@ -52,15 +52,13 @@ func initialUiState(client *client.Client) UI {
 	}
 }
 
-func InitialState() State {
+func InitialState() *State {
 	client := &client.Client{}
 
-	s := State{
+	return &State{
 		Client: client,
 		UI:     initialUiState(client),
 	}
-
-	return s
 }
 
 func (s State) Init() tea.Cmd {
@@ -94,7 +92,7 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		s.UI.CurrentScreen = MainScreen
 
 		// create new client with the provided host and port
-		(*s.Client) = client.NewClient(host, port, tlsEnabled)
+		s.Client.Initialize(host, port, tlsEnabled)
 		s.Client.Register(nickname, password, channel)
 
 		// 512 bytes as a base + 8192 additional bytes for tags

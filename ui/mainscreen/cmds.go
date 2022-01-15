@@ -17,6 +17,7 @@
 package mainscreen
 
 import (
+	"io"
 	"log"
 	"strings"
 
@@ -26,19 +27,18 @@ import (
 
 func (s *State) ReadLoop() {
 	for {
-		select {
-		case <-s.Client.Quit:
+		msg, err := s.ConnReader.ReadString('\n')
+		if err != nil {
+			if err != io.EOF {
+				log.Println(err)
+			}
+			s.Client.TcpConn.Close()
 			return
-		default:
-			msg, err := s.ConnReader.ReadString('\n')
-			if err != nil {
-				log.Fatal(err)
-			}
+		}
 
-			msg = strings.Replace(msg, "\r\n", "", 1)
-			if ircMessage, valid := parser.ParseIRCMessage(msg); valid {
-				s.HandleCommand(ircMessage)
-			}
+		msg = strings.Replace(msg, "\r\n", "", 1)
+		if ircMessage, valid := parser.ParseIRCMessage(msg); valid {
+			s.HandleCommand(ircMessage)
 		}
 	}
 }
@@ -51,4 +51,16 @@ func (s InputState) SendingPrivMsg(msg string) tea.Cmd {
 	return func() tea.Msg {
 		return SendPrivMsg{Msg: msg}
 	}
+}
+
+type ReceivedIRCMsgMsg struct{}
+
+func ReceivedIRCMsg() tea.Msg {
+	return ReceivedIRCMsgMsg{}
+}
+
+type SwitchChannelsMsg struct{}
+
+func SwitchChannels() tea.Msg {
+	return SwitchChannelsMsg{}
 }

@@ -20,8 +20,8 @@ import "github.com/charmbracelet/lipgloss"
 
 var (
 	MainStyle = lipgloss.NewStyle().
-			Width(172).
-			Height(40)
+			Width(0).
+			Height(0)
 
 	DialogStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder(), true).

@@ -23,7 +23,11 @@ import "testing"
 func TestParser(t *testing.T) {
 	t.Run("Test simple command", func(t *testing.T) {
 		testMessage := "foo bar baz asdf"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Command != "foo" {
 			t.Fatal("Parsing message with only command and params")
@@ -44,7 +48,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test source", func(t *testing.T) {
 		testMessage := ":coolguy foo bar baz asdf"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "coolguy" {
 			t.Fatal("Parsing regular source")
@@ -69,7 +77,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test trailing param", func(t *testing.T) {
 		testMessage := "foo bar baz :asdf quux"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Parameters[0] != "bar" {
 			t.Fatal("Parsing 1st param in message with trailing param")
@@ -86,7 +98,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test empty trailing param", func(t *testing.T) {
 		testMessage := "foo bar baz :"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Parameters[0] != "bar" {
 			t.Fatal("Parsing 1st param in message with trailing param")
@@ -103,7 +119,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test multiple colons at trailing param", func(t *testing.T) {
 		testMessage := "foo bar baz ::asdf"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Parameters[0] != "bar" {
 			t.Fatal("Parsing 1st param in message with trailing param")
@@ -120,7 +140,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test source and trailing param", func(t *testing.T) {
 		testMessage := ":coolguy foo bar baz :asdf quux"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "coolguy" {
 			t.Fatal("Parsing source")
@@ -145,7 +169,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test source and trailing param with spaces", func(t *testing.T) {
 		testMessage := ":coolguy foo bar baz :  asdf quux "
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "coolguy" {
 			t.Fatal("Parsing source")
@@ -170,7 +198,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test source and trailing param 2", func(t *testing.T) {
 		testMessage := ":coolguy PRIVMSG bar :lol :) "
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "coolguy" {
 			t.Fatal("Parsing source")
@@ -191,7 +223,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test source and empty trailing param", func(t *testing.T) {
 		testMessage := ":coolguy foo bar baz :"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "coolguy" {
 			t.Fatal("Parsing source")
@@ -216,7 +252,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test source and trailing param with spaces 2", func(t *testing.T) {
 		testMessage := ":coolguy foo bar baz :  "
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "coolguy" {
 			t.Fatal("Parsing source")
@@ -241,7 +281,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test tags", func(t *testing.T) {
 		testMessage := "@id=234AB;rose :dan!d@localhost PRIVMSG #chan :Hey what's up!"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Tags["id"] != "234AB" {
 			t.Fatal("Parsing regular tag")
@@ -270,7 +314,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test tags 2", func(t *testing.T) {
 		testMessage := "@a=b;c=32;k;rt=q17 foo"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Tags["a"] != "b" {
 			t.Fatal("Parsing regular tag")
@@ -296,7 +344,11 @@ func TestParser(t *testing.T) {
 	// TODO: fails
 	t.Run("Test escaped tags", func(t *testing.T) {
 		testMessage := "@a=b\\\\and\\nk;c=72\\s45;d=gh\\:764 foo"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Tags["a"] != "b\\and\nk" {
 			t.Fatal("Parsing escaped tag")
@@ -317,7 +369,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test tags with source", func(t *testing.T) {
 		testMessage := "@c;h=;a=b :quux ab cd"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Tags["c"] != "" {
 			t.Log(ircMessage.Tags)
@@ -348,7 +404,11 @@ func TestParser(t *testing.T) {
 	// TODO: FAIL
 	t.Run("Test single param with preceeding :", func(t *testing.T) {
 		testMessage := ":src JOIN :#chan"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Parameters[0] != "#chan" {
 			t.Fatal("Parsing a single param with a preceeding \":\"")
@@ -357,7 +417,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test with no space as last param", func(t *testing.T) {
 		testMessage := ":src AWAY"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "src" {
 			t.Fatal("Parsing source")
@@ -374,7 +438,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test with space as last param", func(t *testing.T) {
 		testMessage := ":src AWAY "
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "src" {
 			t.Fatal("Parsing source")
@@ -392,7 +460,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test tab as space", func(t *testing.T) {
 		testMessage := ":cool\tguy foo bar baz"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "cool\tguy" {
 			t.Fatal("Parsing source")
@@ -413,7 +485,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test weird control codes in source", func(t *testing.T) {
 		testMessage := ":coolguy!ag@net\x035w\x03ork.admin PRIVMSG foo :bar baz"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "coolguy!ag@net\x035w\x03ork.admin" {
 			t.Fatal("Parsing source")
@@ -434,7 +510,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test more weird control codes", func(t *testing.T) {
 		testMessage := ":coolguy!~ag@n\x02et\x0305w\x0fork.admin PRIVMSG foo :bar baz"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "coolguy!~ag@n\x02et\x0305w\x0fork.admin" {
 			t.Fatal("Parsing source")
@@ -455,7 +535,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test full message", func(t *testing.T) {
 		testMessage := "@tag1=value1;tag2;vendor1/tag3=value2;vendor2/tag4= :irc.example.com COMMAND param1 param2 :param3 param3"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Tags["tag1"] != "value1" {
 			t.Fatal("Parsing regular tag")
@@ -496,7 +580,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test message without tags", func(t *testing.T) {
 		testMessage := ":irc.example.com COMMAND param1 param2 :param3 param3"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "irc.example.com" {
 			t.Fatal("Parsing source")
@@ -521,7 +609,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test message without source", func(t *testing.T) {
 		testMessage := "@tag1=value1;tag2;vendor1/tag3=value2;vendor2/tag4= COMMAND param1 param2 :param3 param3"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Tags["tag1"] != "value1" {
 			t.Fatal("Parsing regular tag")
@@ -563,7 +655,11 @@ func TestParser(t *testing.T) {
 	// TODO: FAIL
 	t.Run("Test yaml encoding with slashes", func(t *testing.T) {
 		testMessage := "@foo=\\\\\\\\\\:\\\\s\\s\\r\\n COMMAND"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Tags["foo"] != "\\\\;\\s \r\n" {
 			t.Fatal("Parsing escaped tag")
@@ -576,7 +672,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test broken messages 1", func(t *testing.T) {
 		testMessage := ":gravel.mozilla.org 432  #momo :Erroneous Nickname: Illegal characters"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "gravel.mozilla.org" {
 			t.Fatal("Parsing source")
@@ -597,7 +697,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test broken messages 2", func(t *testing.T) {
 		testMessage := ":gravel.mozilla.org MODE #tckk +n "
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "gravel.mozilla.org" {
 			t.Fatal("Parsing source")
@@ -618,7 +722,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test broken messages 3", func(t *testing.T) {
 		testMessage := ":services.esper.net MODE #foo-bar +o foobar  "
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "services.esper.net" {
 			t.Fatal("Parsing source")
@@ -644,7 +752,11 @@ func TestParser(t *testing.T) {
 	// TODO: FAIL
 	t.Run("Test tags. they should be parsed char-at-a-time", func(t *testing.T) {
 		testMessage := "@tag1=value\\\\ntest COMMAND"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Tags["tag1"] != "value\\ntest" {
 			t.Fatal("Parsing escaped tag")
@@ -662,7 +774,11 @@ func TestParser(t *testing.T) {
 	// TODO: FAIl
 	t.Run("Test tag escape for char that doesn't need it", func(t *testing.T) {
 		testMessage := "@tag1=value\\1 COMMAND"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Tags["tag1"] != "value1" {
 			t.Fatal("Parsing escaped tag")
@@ -676,7 +792,11 @@ func TestParser(t *testing.T) {
 	// TODO: FAIL
 	t.Run("Test slash at end of tag", func(t *testing.T) {
 		testMessage := "@tag1=value1\\ COMMAND"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Tags["tag1"] != "value1" {
 			t.Fatal("Parsing escaped tag")
@@ -689,7 +809,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test duplicate tags", func(t *testing.T) {
 		testMessage := "@tag1=1;tag2=3;tag3=4;tag1=5 COMMAND"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Tags["tag1"] != "5" {
 			t.Fatal("Parsing duplicate tag")
@@ -710,7 +834,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test vendored tags can have the same name as unvendored tag", func(t *testing.T) {
 		testMessage := "@tag1=1;tag2=3;tag3=4;tag1=5;vendor/tag2=8 COMMAND"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Tags["tag1"] != "5" {
 			t.Fatal("Parsing duplicate tag")
@@ -735,7 +863,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test: some parsers handle /MODE in a special way", func(t *testing.T) {
 		testMessage := ":SomeOp MODE #channel :+i"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "SomeOp" {
 			t.Fatal("Parsing source")
@@ -756,7 +888,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test: some parsers handle /MODE in a special way 2", func(t *testing.T) {
 		testMessage := ":SomeOp MODE #channel +oo SomeUser :AnotherUser"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "SomeOp" {
 			t.Fatal("Parsing source")
@@ -785,7 +921,11 @@ func TestParser(t *testing.T) {
 
 	t.Run("Test multiple spaces", func(t *testing.T) {
 		testMessage := ":src    JOIN    #chan     :thing lol haha"
-		ircMessage := ParseIRCMessage(testMessage)
+		ircMessage, value := ParseIRCMessage(testMessage)
+
+		if !value {
+			t.Fatal("Invalid irc message")
+		}
 
 		if ircMessage.Source != "src" {
 			t.Fatal("Parsing source with multiple spaces in between")
