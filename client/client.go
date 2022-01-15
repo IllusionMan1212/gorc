@@ -97,6 +97,10 @@ func (s *Client) Initialize(host string, port string, tlsEnabled bool) {
 }
 
 func (c *Client) Register(nick string, password string, channel string) {
+	c.Channels[c.Host] = Channel{
+		Users: make(map[string]User),
+	}
+
 	c.SendCommand("CAP", "LS")
 	if password != "" {
 		c.SendCommand("PASS", password)
@@ -112,10 +116,9 @@ func (c *Client) Register(nick string, password string, channel string) {
 	if channel != "" {
 		c.ActiveChannel = channel
 		c.SendCommand("JOIN", channel)
-	}
-
-	c.Channels[c.ActiveChannel] = Channel{
-		Users: make(map[string]User),
+		c.Channels[c.ActiveChannel] = Channel{
+			Users: make(map[string]User),
+		}
 	}
 }
 
@@ -151,10 +154,5 @@ func (c Client) SendCommand(cmd string, params ...string) {
 		}
 	}
 
-	if c.TcpConn != nil {
-		c.TcpConn.Write([]byte(cmd + paramsString + CRLF))
-	} else {
-		// TODO: properly handle the error instead of Fatal-ing
-		log.Fatal("No valid connections to write to")
-	}
+	c.TcpConn.Write([]byte(cmd + paramsString + CRLF))
 }
