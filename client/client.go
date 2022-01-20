@@ -32,6 +32,9 @@ type User struct {
 }
 
 type Channel struct {
+	// Channel name
+	Name string
+
 	// Channel topic
 	Topic string
 
@@ -49,13 +52,26 @@ type Client struct {
 	// tcp connection
 	TcpConn net.Conn
 
-	Host          string
-	Port          string
-	Nickname      string
-	MOTD          string             // TODO:
-	Channels      map[string]Channel // TODO:
+	// Host that client is connected to
+	Host string
+
+	// Port that client is connected to
+	Port string
+
+	// Nickname currently in use by the user
+	Nickname string
+
+	// Joined channels
+	Channels []Channel
+
+	// Active channel name
 	ActiveChannel string
-	Tea           *tea.Program
+
+	// Active channel index
+	ChannelIndex int
+
+	// Reference to the bubbletea program
+	Tea *tea.Program
 }
 
 const CRLF = "\r\n"
@@ -75,7 +91,7 @@ func (s *Client) Initialize(host string, port string, tlsEnabled bool) {
 		s.Host = host
 		s.Port = port
 		s.ActiveChannel = host
-		s.Channels = make(map[string]Channel)
+		s.Channels = make([]Channel, 0)
 		return
 	}
 
@@ -93,13 +109,14 @@ func (s *Client) Initialize(host string, port string, tlsEnabled bool) {
 	s.Host = host
 	s.Port = port
 	s.ActiveChannel = host
-	s.Channels = make(map[string]Channel)
+	s.Channels = make([]Channel, 0)
 }
 
 func (c *Client) Register(nick string, password string, channel string) {
-	c.Channels[c.Host] = Channel{
+	c.Channels = append(c.Channels, Channel{
+		Name:  c.Host,
 		Users: make(map[string]User),
-	}
+	})
 
 	c.SendCommand("CAP", "LS")
 	if password != "" {
@@ -110,15 +127,16 @@ func (c *Client) Register(nick string, password string, channel string) {
 	c.Nickname = nick
 	c.SendCommand("USER", nick, "0", "*", nick)
 	// TODO: CAP REQ :whatever capability the client recognizes and supports
-	c.SendCommand("CAP", "REQ", ":message-tags")
 	c.SendCommand("CAP", "END")
 	// joining a channel when registering is optional
 	if channel != "" {
 		c.ActiveChannel = channel
 		c.SendCommand("JOIN", channel)
-		c.Channels[c.ActiveChannel] = Channel{
+		c.Channels = append(c.Channels, Channel{
+			Name:  c.ActiveChannel,
 			Users: make(map[string]User),
-		}
+		})
+		c.ChannelIndex = 1
 	}
 }
 

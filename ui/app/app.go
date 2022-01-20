@@ -95,6 +95,8 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		s.Client.Initialize(host, port, tlsEnabled)
 		s.Client.Register(nickname, password, channel)
 
+		mainscreen.LastTabIndexInTabBar = len(s.Client.Channels) - 1
+
 		// 512 bytes as a base + 8192 additional bytes for tags
 		r := bufio.NewReaderSize(s.Client.TcpConn, 8192+512)
 		s.UI.MainScreen.ConnReader = r

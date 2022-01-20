@@ -34,8 +34,12 @@ type SidePanelState struct {
 }
 
 func (s *SidePanelState) getHeader() string {
+	usersCount := 0
+	if len(s.Client.Channels) != 0 {
+		usersCount = len(s.Client.Channels[s.Client.ChannelIndex].Users)
+	}
 	separator := strings.Repeat("—", s.Viewport.Width) + "\n"
-	header := fmt.Sprintf("Users in this channel (%d)\n", len(s.Client.Channels[s.Client.ActiveChannel].Users)) + separator
+	header := fmt.Sprintf("Users in this channel (%d)\n", usersCount) + separator
 
 	return header
 }
@@ -43,22 +47,24 @@ func (s *SidePanelState) getHeader() string {
 func (s *SidePanelState) getLatestNicks() []string {
 	nicks := make([]string, 0)
 
-	for nick, user := range s.Client.Channels[s.Client.ActiveChannel].Users {
-		_nick := user.Prefix + nick
-		nicks = append(nicks, _nick)
+	if len(s.Client.Channels) != 0 {
+		for nick, user := range s.Client.Channels[s.Client.ChannelIndex].Users {
+			_nick := user.Prefix + nick
+			nicks = append(nicks, _nick)
+		}
 	}
 
 	return nicks
 }
 
 func NewSidePanel(client *client.Client) *SidePanelState {
+	newViewport := viewport.New(0, 0)
+	newViewport.Style = SidePanelStyle.Copy()
+	newViewport.Wrap = viewport.Wrap
+
 	return &SidePanelState{
-		Client: client,
-		Viewport: viewport.Model{
-			HighPerformanceRendering: false,
-			Wrap:                     viewport.Wrap,
-			Style:                    SidePanelStyle.Copy(),
-		},
+		Client:   client,
+		Viewport: newViewport,
 	}
 }
 

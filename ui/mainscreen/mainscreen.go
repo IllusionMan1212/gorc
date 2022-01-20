@@ -18,7 +18,6 @@ package mainscreen
 
 import (
 	"bufio"
-	"fmt"
 	"math"
 	"strings"
 
@@ -28,11 +27,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/illusionman1212/gorc/client"
 	"github.com/illusionman1212/gorc/commands"
-	"github.com/illusionman1212/gorc/parser"
 	"github.com/illusionman1212/gorc/ui"
 )
 
 type Window int
+type TabDirection int
 
 const (
 	Viewport Window = iota
@@ -40,11 +39,21 @@ const (
 	InputBox
 )
 
+const (
+	Left TabDirection = iota
+	Right
+)
+
+// NOTE: I ABSOLUTELY HATE THIS
+var FirstTabIndexInTabBar = 0
+var LastTabIndexInTabBar = 0
+
 type State struct {
-	ConnReader *bufio.Reader
-	Client     *client.Client
-	Viewport   *viewport.Model
-	FocusIndex Window
+	ConnReader            *bufio.Reader
+	Client                *client.Client
+	Viewport              *viewport.Model
+	FocusIndex            Window
+	TabRenderingDirection TabDirection
 
 	InputBox  InputState
 	SidePanel *SidePanelState
@@ -56,12 +65,13 @@ func NewMainScreen(client *client.Client) State {
 	newViewport.Style = MessagesStyle.Copy()
 
 	return State{
-		ConnReader: nil,
-		Client:     client,
-		Viewport:   &newViewport,
-		FocusIndex: InputBox,
-		InputBox:   NewInputBox(),
-		SidePanel:  NewSidePanel(client),
+		ConnReader:            nil,
+		Client:                client,
+		Viewport:              &newViewport,
+		FocusIndex:            InputBox,
+		InputBox:              NewInputBox(),
+		SidePanel:             NewSidePanel(client),
+		TabRenderingDirection: Right,
 	}
 }
 
@@ -71,7 +81,12 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case ReceivedIRCMsgMsg:
-		s.Viewport.GotoBottom()
+		wasAtBottom := s.Viewport.AtBottom()
+		s.Viewport.SetContent(s.Client.Channels[s.Client.ChannelIndex].History)
+
+		if wasAtBottom {
+			s.Viewport.GotoBottom()
+		}
 		return s, nil
 	case SendPrivMsg:
 		// for sending slash commands
@@ -83,11 +98,23 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 			if len(substrs) > 1 {
 				params = strings.Split(substrs[1], " ")
 			}
+
 			if strings.ToUpper(command) == commands.JOIN {
-				s.Client.ActiveChannel = params[0]
-				if _, ok := s.Client.Channels[params[0]]; !ok {
-					s.Client.Channels[params[0]] = client.Channel{
-						Users: make(map[string]client.User),
+				// TODO: handle comma separated channels
+				channel := params[0]
+				s.Client.ActiveChannel = channel
+				for i, c := range s.Client.Channels {
+					if c.Name == channel {
+						s.Client.ChannelIndex = i
+						break
+					} else if i == len(s.Client.Channels)-1 {
+						s.Client.Channels = append(s.Client.Channels, client.Channel{
+							Name:  channel,
+							Users: make(map[string]client.User),
+						})
+						s.Client.ChannelIndex = len(s.Client.Channels) - 1
+						LastTabIndexInTabBar = len(s.Client.Channels) - 1
+						s.TabRenderingDirection = Left
 					}
 				}
 				s.Client.SendCommand(commands.JOIN, params...)
@@ -97,19 +124,23 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		} else {
 			if s.Client.ActiveChannel != s.Client.Host {
 				fullMsg := s.Client.Nickname + ": " + msg.Msg
-				if c, ok := s.Client.Channels[s.Client.ActiveChannel]; ok {
-					c.History += fullMsg + client.CRLF
-
-					s.Client.Channels[s.Client.ActiveChannel] = c
-				}
+				s.Client.Channels[s.Client.ChannelIndex].History += fullMsg + client.CRLF
 				// TODO: make sure to only append the message to the history if server sends back no errors
 				s.Client.SendCommand(commands.PRIVMSG, s.Client.ActiveChannel, msg.Msg)
-				s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
+				s.Viewport.SetContent(s.Client.Channels[s.Client.ChannelIndex].History)
 				s.Viewport.GotoBottom()
 			}
 		}
 
 		return s, nil
+	case SwitchChannelsMsg:
+		s.Viewport.SetContent(s.Client.Channels[s.Client.ChannelIndex].History)
+		s.Viewport.GotoBottom()
+
+		*s.SidePanel, cmd = s.SidePanel.Update(msg)
+		cmds = append(cmds, cmd)
+
+		return s, tea.Batch(cmds...)
 	case tea.KeyMsg:
 		key := msg.String()
 		switch key {
@@ -143,6 +174,42 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 			}
 
 			return s, tea.Batch(cmds...)
+		case "right", "left":
+			// we need this so that the viewport doesnt scroll to the bottom
+			if len(s.Client.Channels) == 1 {
+				return s, nil
+			}
+
+			if key == "right" {
+				s.Client.ChannelIndex++
+			} else {
+				s.Client.ChannelIndex--
+			}
+
+			if s.Client.ChannelIndex >= len(s.Client.Channels) {
+				s.Client.ChannelIndex = 0
+			} else if s.Client.ChannelIndex < 0 {
+				s.Client.ChannelIndex = len(s.Client.Channels) - 1
+			}
+
+			if s.Client.ChannelIndex > LastTabIndexInTabBar {
+				s.TabRenderingDirection = Left
+				LastTabIndexInTabBar = s.Client.ChannelIndex
+			} else if s.Client.ChannelIndex < FirstTabIndexInTabBar {
+				FirstTabIndexInTabBar = s.Client.ChannelIndex
+				s.TabRenderingDirection = Right
+			}
+
+			s.Client.ActiveChannel = s.Client.Channels[s.Client.ChannelIndex].Name
+			return s, SwitchChannels
+		case "g":
+			if s.FocusIndex == Viewport {
+				s.Viewport.GotoTop()
+			}
+		case "G":
+			if s.FocusIndex == Viewport {
+				s.Viewport.GotoBottom()
+			}
 		}
 	}
 
@@ -163,9 +230,23 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 
 func (s *State) Focus() {
 	s.Viewport.Style = s.Viewport.Style.Copy().BorderForeground(lipgloss.Color("105"))
+
+	tab = tab.Copy().BorderForeground(lipgloss.Color("105"))
+	leftArrowDim = leftArrowDim.Copy().BorderForeground(lipgloss.Color("105"))
+	rightArrowDim = rightArrowDim.Copy().BorderForeground(lipgloss.Color("105"))
+	leftArrowLit = leftArrowLit.Copy().BorderForeground(lipgloss.Color("105"))
+	rightArrowLit = rightArrowLit.Copy().BorderForeground(lipgloss.Color("105"))
+	tabLine = tabLine.Copy().Foreground(lipgloss.Color("105"))
 }
 func (s *State) Blur() {
 	s.Viewport.Style = s.Viewport.Style.Copy().BorderForeground(lipgloss.Color("#EEE"))
+
+	tab = tab.Copy().UnsetBorderForeground()
+	leftArrowDim = leftArrowDim.Copy().UnsetBorderForeground()
+	rightArrowDim = rightArrowDim.Copy().UnsetBorderForeground()
+	leftArrowLit = leftArrowLit.Copy().UnsetBorderForeground()
+	rightArrowLit = rightArrowLit.Copy().UnsetBorderForeground()
+	tabLine = tabLine.Copy().UnsetForeground()
 }
 
 func (s *State) SetSize(width, height int) {
@@ -174,9 +255,9 @@ func (s *State) SetSize(width, height int) {
 
 	// We floor here because width is an int and some fractions are lost
 	// and also because we ceil the sidepanel's width
-	// -1 is for some extra invisible margin or padding between the main viewport and the inputbox
+	// -3 for the tab bar height
 	newWidth := int(math.Floor(float64(width)*8.0/10.0) - float64(s.Viewport.Style.GetHorizontalFrameSize()))
-	newHeight := height - s.InputBox.Style.GetVerticalFrameSize() - s.Viewport.Style.GetVerticalFrameSize() - 1
+	newHeight := height - s.InputBox.Style.GetVerticalFrameSize() - s.Viewport.Style.GetVerticalFrameSize() - 3
 
 	s.Viewport.Width = newWidth
 	s.Viewport.Height = newHeight
@@ -184,126 +265,108 @@ func (s *State) SetSize(width, height int) {
 	s.Viewport.Style = s.Viewport.Style.Width(newWidth)
 	s.Viewport.Style = s.Viewport.Style.Height(newHeight)
 
-	// we need to re-set the content because words wrap differently on different sizes
-	s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
-}
-
-func (s *State) HandleCommand(msg parser.IRCMessage) {
-	// TODO: handle different commands
-	switch msg.Command {
-	case commands.PING:
-		token := msg.Parameters[0]
-		s.Client.SendCommand(commands.PONG, token)
-	case commands.PRIVMSG:
-		nick := strings.SplitN(msg.Source, "!", 2)[0]
-		channel := msg.Parameters[0]
-		msgContent := msg.Parameters[1]
-		privMsg := fmt.Sprintf("%s: %s", nick, msgContent)
-
-		if c, ok := s.Client.Channels[channel]; ok {
-			c.History += privMsg + client.CRLF
-
-			s.Client.Channels[channel] = c
-		}
-		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
-	case commands.JOIN:
-		nick := strings.SplitN(msg.Source, "!", 2)[0]
-		channel := msg.Parameters[0]
-
-		joinMsg := fmt.Sprintf("== %s has joined", nick)
-		if c, ok := s.Client.Channels[channel]; ok {
-			c.History += joinMsg + client.CRLF
-			if _, exists := c.Users[nick]; !exists {
-				c.Users[nick] = client.User{}
-			}
-
-			s.Client.Channels[channel] = c
-		}
-
-		if channel == s.Client.ActiveChannel {
-			s.SidePanel.UpdateNicks()
-		}
-
-		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
-	case commands.QUIT:
-		nick := strings.SplitN(msg.Source, "!", 2)[0]
-		reason := msg.Parameters[0]
-		quitMsg := fmt.Sprintf("== %s has quit (%s)", nick, reason)
-
-		for chanName, channel := range s.Client.Channels {
-			channel.History += quitMsg + client.CRLF
-			delete(channel.Users, nick)
-
-			s.Client.Channels[chanName] = channel
-		}
-
-		s.SidePanel.UpdateNicks()
-		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
-	case commands.PART:
-		nick := strings.SplitN(msg.Source, "!", 2)[0]
-		channel := msg.Parameters[0]
-		reason := ""
-		if len(msg.Parameters) > 1 {
-			reason = msg.Parameters[1]
-		}
-
-		partMsg := fmt.Sprintf("== %s has left %s (%s)", nick, channel, reason)
-		if c, ok := s.Client.Channels[channel]; ok {
-			c.History += partMsg + client.CRLF
-			delete(c.Users, nick)
-
-			s.Client.Channels[channel] = c
-		}
-
-		s.SidePanel.UpdateNicks()
-		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
-	case commands.RPL_NAMREPLY:
-		// TODO: do i need these
-		// client := msg.Parameters[0]
-		// chanSymbol := msg.Parameters[1]
-		channel := msg.Parameters[2]
-		nicks := strings.Split(msg.Parameters[3], " ")
-
-		if c, ok := s.Client.Channels[channel]; ok {
-			for _, nick := range nicks {
-				prefix := ""
-				_nick := nick
-
-				if commands.UserPrefixes[string(nick[0])] {
-					prefix = string(nick[0])
-					_nick = nick[1:]
-				}
-
-				c.Users[_nick] = client.User{
-					Prefix: prefix,
-				}
-			}
-		}
-
-		if channel == s.Client.ActiveChannel {
-			s.SidePanel.UpdateNicks()
-		}
-	case commands.RPL_ENDOFNAMES:
-		// TODO: what do i do here lol
-	default:
-		fullMsg := fmt.Sprintf("%s %s %s %s", msg.Tags, msg.Source, msg.Command, strings.Join(msg.Parameters, " "))
-		if c, ok := s.Client.Channels[s.Client.ActiveChannel]; ok {
-			c.History += fullMsg + client.CRLF
-
-			s.Client.Channels[s.Client.ActiveChannel] = c
-		}
-
-		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannel].History)
+	// we need this to render an empty viewport
+	history := ""
+	if len(s.Client.Channels) != 0 {
+		history = s.Client.Channels[s.Client.ChannelIndex].History
 	}
 
-	// send a receivedIRCmsg tea message so the ui can update
-	// we also use this tea message to scroll the viewport down
-	s.Client.Tea.Send(ReceivedIRCMsg())
+	// we need to re-set the content because words wrap differently on different sizes
+	s.Viewport.SetContent(history)
+	s.Viewport.SetYOffset(s.Viewport.YOffset)
+}
+
+func (s State) buildTabBar(rightArrow string, leftArrow string) string {
+	var renderedTabs []string
+	tabs := ""
+
+	switch s.TabRenderingDirection {
+	case Left:
+		for i := LastTabIndexInTabBar; i >= 0; i-- {
+			if s.Client.Channels[i].Name == s.Client.ActiveChannel {
+				renderedTabs = append([]string{activeTab.Render(s.Client.Channels[i].Name)}, renderedTabs...)
+			} else {
+				renderedTabs = append([]string{tab.Render(s.Client.Channels[i].Name)}, renderedTabs...)
+			}
+
+			tabs = lipgloss.JoinHorizontal(
+				lipgloss.Top,
+				renderedTabs...,
+			)
+
+			if lipgloss.Width(tabs) > lipgloss.Width(s.Viewport.View())-lipgloss.Width(leftArrow)-lipgloss.Width(rightArrow) {
+				// set the first tab to be displayed to the index of the previous tab in the loop
+				FirstTabIndexInTabBar = i + 1
+				// dont render the newly added tab
+				renderedTabs = renderedTabs[1:]
+				break
+			}
+		}
+	case Right:
+		for i := FirstTabIndexInTabBar; i < len(s.Client.Channels); i++ {
+			if s.Client.Channels[i].Name == s.Client.ActiveChannel {
+				renderedTabs = append(renderedTabs, activeTab.Render(s.Client.Channels[i].Name))
+			} else {
+				renderedTabs = append(renderedTabs, tab.Render(s.Client.Channels[i].Name))
+			}
+
+			tabs = lipgloss.JoinHorizontal(
+				lipgloss.Top,
+				renderedTabs...,
+			)
+
+			if lipgloss.Width(tabs) > lipgloss.Width(s.Viewport.View())-lipgloss.Width(leftArrow)-lipgloss.Width(rightArrow) {
+				// set the last tab to be displayed to the index of the previous tab in the loop
+				LastTabIndexInTabBar = i - 1
+				// dont render the newly added tab
+				renderedTabs = renderedTabs[:len(renderedTabs)-1]
+				break
+			}
+		}
+	}
+
+	tabs = lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		renderedTabs...,
+	)
+
+	return tabs
 }
 
 func (s State) View() string {
-	top := lipgloss.JoinHorizontal(lipgloss.Right, s.Viewport.View(), s.SidePanel.View())
+	leftArrow := leftArrowDim.Render("❰")
+	rightArrow := rightArrowDim.Render("❱")
+
+	tabs := s.buildTabBar(leftArrow, rightArrow)
+	tabBar := strings.Builder{}
+
+	if FirstTabIndexInTabBar != 0 {
+		leftArrow = leftArrowLit.Render("❰")
+	}
+
+	if LastTabIndexInTabBar != len(s.Client.Channels)-1 {
+		rightArrow = rightArrowLit.Render("❱")
+	}
+
+	tabBarLine := tabLine.Render(
+		strings.Repeat(
+			"─",
+			max(0, lipgloss.Width(s.Viewport.View())-lipgloss.Width(tabs)-lipgloss.Width(rightArrow)-lipgloss.Width(leftArrow)),
+		),
+	)
+	tabs = lipgloss.JoinHorizontal(lipgloss.Bottom, leftArrow, tabs, tabBarLine, rightArrow)
+	tabBar.WriteString(tabs)
+
+	leftSide := lipgloss.JoinVertical(0, tabBar.String(), s.Viewport.View())
+	top := lipgloss.JoinHorizontal(lipgloss.Right, leftSide, s.SidePanel.View())
 	screen := lipgloss.JoinVertical(0, top, s.InputBox.View())
 
 	return ui.MainStyle.Render(screen)
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
