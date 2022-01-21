@@ -72,10 +72,22 @@ func (s SidePanelState) Update(msg tea.Msg) (SidePanelState, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
-	switch msg.(type) {
+	switch msg := msg.(type) {
 	case SwitchChannelsMsg:
 		s.UpdateNicks()
 		return s, nil
+	case tea.KeyMsg:
+		key := msg.String()
+		switch key {
+		case "g":
+			if s.Focused {
+				s.Viewport.GotoTop()
+			}
+		case "G":
+			if s.Focused {
+				s.Viewport.GotoBottom()
+			}
+		}
 	}
 
 	if s.Focused {
