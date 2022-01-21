@@ -68,7 +68,7 @@ type Client struct {
 	ActiveChannel string
 
 	// Active channel index
-	ChannelIndex int
+	ActiveChannelIndex int
 
 	// Reference to the bubbletea program
 	Tea *tea.Program
@@ -136,7 +136,7 @@ func (c *Client) Register(nick string, password string, channel string) {
 			Name:  c.ActiveChannel,
 			Users: make(map[string]User),
 		})
-		c.ChannelIndex = 1
+		c.ActiveChannelIndex = 1
 	}
 }
 

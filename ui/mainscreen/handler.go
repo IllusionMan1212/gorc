@@ -245,13 +245,21 @@ func (s *State) HandleCommand(msg parser.IRCMessage) {
 	case commands.RPL_NAMREPLY:
 		s.handleNAMREPLY(msg)
 	case commands.RPL_ENDOFNAMES:
-		// TODO: what do i do here lol
+		// TODO: toggle a flag on the channel to indicate
+		// it received all the names correctly.
+
+		// start a timeout and update said timeout on every RPL_NAMREPLY
+		// and log an error if timeout ends without receiving this command.
 	case commands.RPL_MOTDSTART:
 		s.handleMOTDStart(msg)
 	case commands.RPL_MOTD:
 		s.handleMOTD(msg)
 	case commands.RPL_ENDOFMOTD:
-		// TODO: what do i do here lol
+		// TODO: toggle a flag on the client/server to indicate
+		// it received all the MOTD correctly
+
+		// start a timeout and update said timeout on every RPL_MOTD
+		// and log an error if timeout ends without receiving this command.
 	default:
 		fullMsg := fmt.Sprintf("%s %s %s %s", msg.Tags, msg.Source, msg.Command, strings.Join(msg.Parameters, " "))
 

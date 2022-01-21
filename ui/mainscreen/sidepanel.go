@@ -36,7 +36,7 @@ type SidePanelState struct {
 func (s *SidePanelState) getHeader() string {
 	usersCount := 0
 	if len(s.Client.Channels) != 0 {
-		usersCount = len(s.Client.Channels[s.Client.ChannelIndex].Users)
+		usersCount = len(s.Client.Channels[s.Client.ActiveChannelIndex].Users)
 	}
 	separator := strings.Repeat("—", s.Viewport.Width) + "\n"
 	header := fmt.Sprintf("Users in this channel (%d)\n", usersCount) + separator
@@ -48,7 +48,7 @@ func (s *SidePanelState) getLatestNicks() []string {
 	nicks := make([]string, 0)
 
 	if len(s.Client.Channels) != 0 {
-		for nick, user := range s.Client.Channels[s.Client.ChannelIndex].Users {
+		for nick, user := range s.Client.Channels[s.Client.ActiveChannelIndex].Users {
 			_nick := user.Prefix + nick
 			nicks = append(nicks, _nick)
 		}

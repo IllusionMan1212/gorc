@@ -82,7 +82,7 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 	switch msg := msg.(type) {
 	case ReceivedIRCMsgMsg:
 		wasAtBottom := s.Viewport.AtBottom()
-		s.Viewport.SetContent(s.Client.Channels[s.Client.ChannelIndex].History)
+		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannelIndex].History)
 
 		if wasAtBottom {
 			s.Viewport.GotoBottom()
@@ -105,14 +105,14 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 				s.Client.ActiveChannel = channel
 				for i, c := range s.Client.Channels {
 					if c.Name == channel {
-						s.Client.ChannelIndex = i
+						s.Client.ActiveChannelIndex = i
 						break
 					} else if i == len(s.Client.Channels)-1 {
 						s.Client.Channels = append(s.Client.Channels, client.Channel{
 							Name:  channel,
 							Users: make(map[string]client.User),
 						})
-						s.Client.ChannelIndex = len(s.Client.Channels) - 1
+						s.Client.ActiveChannelIndex = len(s.Client.Channels) - 1
 						LastTabIndexInTabBar = len(s.Client.Channels) - 1
 						s.TabRenderingDirection = Left
 					}
@@ -124,17 +124,17 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		} else {
 			if s.Client.ActiveChannel != s.Client.Host {
 				fullMsg := s.Client.Nickname + ": " + msg.Msg
-				s.Client.Channels[s.Client.ChannelIndex].History += fullMsg + client.CRLF
+				s.Client.Channels[s.Client.ActiveChannelIndex].History += fullMsg + client.CRLF
 				// TODO: make sure to only append the message to the history if server sends back no errors
 				s.Client.SendCommand(commands.PRIVMSG, s.Client.ActiveChannel, msg.Msg)
-				s.Viewport.SetContent(s.Client.Channels[s.Client.ChannelIndex].History)
+				s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannelIndex].History)
 				s.Viewport.GotoBottom()
 			}
 		}
 
 		return s, nil
 	case SwitchChannelsMsg:
-		s.Viewport.SetContent(s.Client.Channels[s.Client.ChannelIndex].History)
+		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannelIndex].History)
 		s.Viewport.GotoBottom()
 
 		*s.SidePanel, cmd = s.SidePanel.Update(msg)
@@ -181,26 +181,26 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 			}
 
 			if key == "right" {
-				s.Client.ChannelIndex++
+				s.Client.ActiveChannelIndex++
 			} else {
-				s.Client.ChannelIndex--
+				s.Client.ActiveChannelIndex--
 			}
 
-			if s.Client.ChannelIndex >= len(s.Client.Channels) {
-				s.Client.ChannelIndex = 0
-			} else if s.Client.ChannelIndex < 0 {
-				s.Client.ChannelIndex = len(s.Client.Channels) - 1
+			if s.Client.ActiveChannelIndex >= len(s.Client.Channels) {
+				s.Client.ActiveChannelIndex = 0
+			} else if s.Client.ActiveChannelIndex < 0 {
+				s.Client.ActiveChannelIndex = len(s.Client.Channels) - 1
 			}
 
-			if s.Client.ChannelIndex > LastTabIndexInTabBar {
+			if s.Client.ActiveChannelIndex > LastTabIndexInTabBar {
 				s.TabRenderingDirection = Left
-				LastTabIndexInTabBar = s.Client.ChannelIndex
-			} else if s.Client.ChannelIndex < FirstTabIndexInTabBar {
-				FirstTabIndexInTabBar = s.Client.ChannelIndex
+				LastTabIndexInTabBar = s.Client.ActiveChannelIndex
+			} else if s.Client.ActiveChannelIndex < FirstTabIndexInTabBar {
+				FirstTabIndexInTabBar = s.Client.ActiveChannelIndex
 				s.TabRenderingDirection = Right
 			}
 
-			s.Client.ActiveChannel = s.Client.Channels[s.Client.ChannelIndex].Name
+			s.Client.ActiveChannel = s.Client.Channels[s.Client.ActiveChannelIndex].Name
 			return s, SwitchChannels
 		case "g":
 			if s.FocusIndex == Viewport {
@@ -268,7 +268,7 @@ func (s *State) SetSize(width, height int) {
 	// we need this to render an empty viewport
 	history := ""
 	if len(s.Client.Channels) != 0 {
-		history = s.Client.Channels[s.Client.ChannelIndex].History
+		history = s.Client.Channels[s.Client.ActiveChannelIndex].History
 	}
 
 	// we need to re-set the content because words wrap differently on different sizes
