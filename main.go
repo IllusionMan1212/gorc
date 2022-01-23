@@ -24,15 +24,15 @@ import (
 )
 
 func main() {
-	_app := app.InitialState()
+	gorc := app.InitialState()
 
 	p := tea.NewProgram(
-		_app,
+		gorc,
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),
 	)
 
-	_app.Client.Tea = p
+	gorc.Client.Tea = p
 
 	f, err := tea.LogToFile("gorc.log", "gorc")
 	defer f.Close()
