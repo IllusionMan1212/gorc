@@ -131,8 +131,17 @@ func handlePart(msg parser.IRCMessage, client *irc.Client) {
 
 	for i, c := range client.Channels {
 		if c.Name == channel {
-			client.Channels[i].History += partMsg + irc.CRLF
-			delete(client.Channels[i].Users, nick)
+			if nick == client.Nickname {
+				client.Channels = append(client.Channels[:i], client.Channels[i+1:]...)
+				if client.ActiveChannelIndex >= i {
+					client.ActiveChannelIndex--
+					client.ActiveChannel = client.Channels[client.ActiveChannelIndex].Name
+				}
+				client.LastTabIndexInTabBar--
+			} else {
+				client.Channels[i].History += partMsg + irc.CRLF
+				delete(client.Channels[i].Users, nick)
+			}
 		}
 	}
 
