@@ -78,6 +78,7 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Width(msg.Width).
 			Height(msg.Height)
 
+		s.UI.Login.SetSize(msg.Width, msg.Height)
 		s.UI.MainScreen.SetSize(msg.Width, msg.Height)
 
 		return s, nil

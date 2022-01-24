@@ -28,18 +28,24 @@ import (
 )
 
 type State struct {
-	FocusIndex int
-	Inputs     []textinput.Model
-	TLS        bool
+	FocusIndex      int
+	Inputs          []textinput.Model
+	TLS             bool
+	DialogStyle     lipgloss.Style
+	WelcomeMsgStyle lipgloss.Style
+	Style           lipgloss.Style
 }
 
 func NewLogin() State {
-	ls := State{
-		Inputs: make([]textinput.Model, 5),
+	state := State{
+		Inputs:          make([]textinput.Model, 5),
+		DialogStyle:     DialogStyle.Copy(),
+		WelcomeMsgStyle: WelcomeMsgStyle.Copy(),
+		Style:           ui.MainStyle.Copy(),
 	}
 
 	var t textinput.Model
-	for i := range ls.Inputs {
+	for i := range state.Inputs {
 		t = textinput.New()
 		t.CursorStyle = ui.CursorStyle
 		t.Prompt = "| "
@@ -66,10 +72,10 @@ func NewLogin() State {
 			t.EchoCharacter = '•'
 		}
 
-		ls.Inputs[i] = t
+		state.Inputs[i] = t
 	}
 
-	return ls
+	return state
 }
 
 func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
@@ -78,7 +84,7 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		key := msg.String()
 		switch key {
 		case " ", "enter":
-			// run the newClient cmd when pressing "enter" while focused on the connect button
+			// run the Connect cmd when pressing "enter" while focused on the connect button
 			if key == "enter" && s.FocusIndex == len(s.Inputs)+1 {
 				return s, cmds.Connect
 			}
@@ -134,6 +140,14 @@ func (s *State) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+func (s *State) SetSize(width, height int) {
+	s.DialogStyle = s.DialogStyle.Copy().Width(width - s.DialogStyle.GetHorizontalFrameSize())
+	s.DialogStyle = s.DialogStyle.Copy().Height(height*5/10 - s.DialogStyle.GetVerticalFrameSize())
+
+	s.WelcomeMsgStyle = s.WelcomeMsgStyle.Copy().Width(width)
+	s.WelcomeMsgStyle = s.WelcomeMsgStyle.Copy().Height(height * 5 / 10)
+}
+
 func (s State) View() string {
 	var sb strings.Builder
 
@@ -167,9 +181,7 @@ func (s State) View() string {
 	}
 	fmt.Fprintf(&sb, "\n%s\n", *button)
 
-	screen := lipgloss.JoinVertical(0, WelcomeMsgStyle.Render(WelcomeMsg), ui.DialogStyle.Render(sb.String()))
+	screen := lipgloss.JoinVertical(lipgloss.Center, s.WelcomeMsgStyle.Render(WelcomeMsg), s.DialogStyle.Render(sb.String()))
 
-	final := lipgloss.Place(ui.MainStyle.GetWidth(), ui.MainStyle.GetHeight(), lipgloss.Center, lipgloss.Top, screen)
-
-	return ui.MainStyle.Render(final)
+	return ui.MainStyle.Render(screen)
 }

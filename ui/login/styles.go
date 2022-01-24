@@ -16,7 +16,9 @@
 
 package login
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/lipgloss"
+)
 
 const WelcomeMsg = `                                        
                                         
@@ -33,19 +35,15 @@ const WelcomeMsg = `
 `
 
 var (
-	WelcomeMsgStyle = lipgloss.NewStyle().
-			Padding(0, 5).
-			MarginBottom(5)
-
 	FocusedButton = lipgloss.NewStyle().
 			Background(lipgloss.Color("105")).
-			Foreground(lipgloss.Color("255")).
+			Foreground(lipgloss.Color("#000")).
 			MarginTop(1).
 			Padding(0, 2).
 			Align(lipgloss.Center).
 			Render("Connect")
 	BlurredButton = lipgloss.NewStyle().
-			Background(lipgloss.Color("#809070")).
+			Background(lipgloss.Color("#505050")).
 			Foreground(lipgloss.Color("#EEEEEE")).
 			MarginTop(1).
 			Padding(0, 2).
@@ -71,4 +69,10 @@ var (
 				Foreground(lipgloss.Color("#EEEEEE")).
 				MarginTop(1).
 				Render("[x] Enable TLS")
+
+	DialogStyle = lipgloss.NewStyle().
+			Align(lipgloss.Center)
+
+	WelcomeMsgStyle = lipgloss.NewStyle().
+			Align(lipgloss.Center)
 )

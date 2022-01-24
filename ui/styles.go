@@ -23,13 +23,6 @@ var (
 			Width(0).
 			Height(0)
 
-	DialogStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder(), true).
-			Align(lipgloss.Center).
-			Width(50).
-			Padding(3, 6).
-			BorderForeground(lipgloss.Color("105"))
-
 	CursorStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("105"))
 	FocusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("105"))
 	NoStyle      = lipgloss.NewStyle()
