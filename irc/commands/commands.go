@@ -307,7 +307,6 @@ const (
 )
 
 /* --- RPL_ISUPPORT Parameters --- */
-
 var Features = map[string]bool{
 	"ACCEPT":      true,
 	"AWAYLEN":     true,

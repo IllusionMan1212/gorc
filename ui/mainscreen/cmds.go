@@ -17,31 +17,8 @@
 package mainscreen
 
 import (
-	"io"
-	"log"
-	"strings"
-
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/illusionman1212/gorc/parser"
 )
-
-func (s *State) ReadLoop() {
-	for {
-		msg, err := s.ConnReader.ReadString('\n')
-		if err != nil {
-			if err != io.EOF {
-				log.Println(err)
-			}
-			s.Client.TcpConn.Close()
-			return
-		}
-
-		msg = strings.Replace(msg, "\r\n", "", 1)
-		if ircMessage, valid := parser.ParseIRCMessage(msg); valid {
-			s.HandleCommand(ircMessage)
-		}
-	}
-}
 
 type SendPrivMsg struct {
 	Msg string

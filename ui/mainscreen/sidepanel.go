@@ -24,11 +24,11 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/illusionman1212/gorc/client"
+	"github.com/illusionman1212/gorc/irc"
 )
 
 type SidePanelState struct {
-	Client   *client.Client
+	Client   *irc.Client
 	Viewport viewport.Model
 	Focused  bool
 }
@@ -57,7 +57,7 @@ func (s *SidePanelState) getLatestNicks() []string {
 	return nicks
 }
 
-func NewSidePanel(client *client.Client) *SidePanelState {
+func NewSidePanel(client *irc.Client) *SidePanelState {
 	newViewport := viewport.New(0, 0)
 	newViewport.Style = SidePanelStyle.Copy()
 	newViewport.Wrap = viewport.Wrap

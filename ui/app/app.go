@@ -17,11 +17,10 @@
 package app
 
 import (
-	"bufio"
-
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/illusionman1212/gorc/client"
+	"github.com/illusionman1212/gorc/irc"
+	"github.com/illusionman1212/gorc/irc/handler"
 	"github.com/illusionman1212/gorc/ui"
 	"github.com/illusionman1212/gorc/ui/login"
 	"github.com/illusionman1212/gorc/ui/mainscreen"
@@ -42,10 +41,10 @@ type UI struct {
 
 type State struct {
 	UI     UI
-	Client *client.Client
+	Client *irc.Client
 }
 
-func initialUiState(client *client.Client) UI {
+func initialUiState(client *irc.Client) UI {
 	return UI{
 		Login:      login.NewLogin(),
 		MainScreen: mainscreen.NewMainScreen(client),
@@ -53,7 +52,7 @@ func initialUiState(client *client.Client) UI {
 }
 
 func InitialState() *State {
-	client := &client.Client{}
+	client := &irc.Client{}
 
 	return &State{
 		Client: client,
@@ -97,11 +96,7 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		mainscreen.LastTabIndexInTabBar = len(s.Client.Channels) - 1
 
-		// 512 bytes as a base + 8192 additional bytes for tags
-		r := bufio.NewReaderSize(s.Client.TcpConn, 8192+512)
-		s.UI.MainScreen.ConnReader = r
-
-		go s.UI.MainScreen.ReadLoop()
+		go handler.ReadLoop(s.Client)
 
 		return s, textinput.Blink
 	}

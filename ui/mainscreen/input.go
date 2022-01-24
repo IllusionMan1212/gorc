@@ -20,13 +20,11 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/illusionman1212/gorc/client"
 )
 
 type InputState struct {
-	Input  textinput.Model
-	Style  lipgloss.Style
-	Client *client.Client
+	Input textinput.Model
+	Style lipgloss.Style
 }
 
 func NewInputBox() InputState {

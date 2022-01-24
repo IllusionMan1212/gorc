@@ -17,7 +17,6 @@
 package mainscreen
 
 import (
-	"bufio"
 	"math"
 	"strings"
 
@@ -25,8 +24,8 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/illusionman1212/gorc/client"
-	"github.com/illusionman1212/gorc/commands"
+	"github.com/illusionman1212/gorc/irc"
+	"github.com/illusionman1212/gorc/irc/commands"
 	"github.com/illusionman1212/gorc/ui"
 )
 
@@ -49,8 +48,7 @@ var FirstTabIndexInTabBar = 0
 var LastTabIndexInTabBar = 0
 
 type State struct {
-	ConnReader            *bufio.Reader
-	Client                *client.Client
+	Client                *irc.Client
 	Viewport              *viewport.Model
 	FocusIndex            Window
 	TabRenderingDirection TabDirection
@@ -59,13 +57,12 @@ type State struct {
 	SidePanel *SidePanelState
 }
 
-func NewMainScreen(client *client.Client) State {
+func NewMainScreen(client *irc.Client) State {
 	newViewport := viewport.New(0, 0)
 	newViewport.Wrap = viewport.Wrap
 	newViewport.Style = MessagesStyle.Copy()
 
 	return State{
-		ConnReader:            nil,
 		Client:                client,
 		Viewport:              &newViewport,
 		FocusIndex:            InputBox,
@@ -108,9 +105,9 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 						s.Client.ActiveChannelIndex = i
 						break
 					} else if i == len(s.Client.Channels)-1 {
-						s.Client.Channels = append(s.Client.Channels, client.Channel{
+						s.Client.Channels = append(s.Client.Channels, irc.Channel{
 							Name:  channel,
-							Users: make(map[string]client.User),
+							Users: make(map[string]irc.User),
 						})
 						s.Client.ActiveChannelIndex = len(s.Client.Channels) - 1
 						LastTabIndexInTabBar = len(s.Client.Channels) - 1
@@ -124,7 +121,7 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		} else {
 			if s.Client.ActiveChannel != s.Client.Host {
 				fullMsg := s.Client.Nickname + ": " + msg.Msg
-				s.Client.Channels[s.Client.ActiveChannelIndex].History += fullMsg + client.CRLF
+				s.Client.Channels[s.Client.ActiveChannelIndex].History += fullMsg + irc.CRLF
 				// TODO: make sure to only append the message to the history if server sends back no errors
 				s.Client.SendCommand(commands.PRIVMSG, s.Client.ActiveChannel, msg.Msg)
 				s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannelIndex].History)
