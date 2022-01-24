@@ -73,11 +73,26 @@ func handleJoin(msg parser.IRCMessage, client *irc.Client) {
 	channel := msg.Parameters[0]
 
 	joinMsg := fmt.Sprintf("== %s has joined", nick)
-	for i, c := range client.Channels {
-		if c.Name == channel {
-			client.Channels[i].History += joinMsg + irc.CRLF
-			if _, exists := client.Channels[i].Users[nick]; !exists {
-				client.Channels[i].Users[nick] = irc.User{}
+
+	if nick == client.Nickname {
+		client.Channels = append(client.Channels, irc.Channel{
+			Name:  channel,
+			Users: make(map[string]irc.User),
+		})
+		client.ActiveChannelIndex = len(client.Channels) - 1
+		client.ActiveChannel = channel
+		client.Channels[client.ActiveChannelIndex].History += joinMsg + irc.CRLF
+		if _, exists := client.Channels[client.ActiveChannelIndex].Users[nick]; !exists {
+			client.Channels[client.ActiveChannelIndex].Users[nick] = irc.User{}
+		}
+		client.Tea.Send(cmds.UpdateTabBar())
+	} else {
+		for i, c := range client.Channels {
+			if c.Name == channel {
+				client.Channels[i].History += joinMsg + irc.CRLF
+				if _, exists := client.Channels[i].Users[nick]; !exists {
+					client.Channels[i].Users[nick] = irc.User{}
+				}
 			}
 		}
 	}

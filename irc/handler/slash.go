@@ -26,35 +26,21 @@ import (
 )
 
 func handleSlashJoin(params []string, client *irc.Client) tea.Cmd {
-	// TODO: only add channel to client slice when
-	// we get a JOIN command from the server with our nickname
-	// TODO: handle comma separated channels
-	var cmdsToProcess []tea.Cmd
-
 	channel := ""
 	if len(params) > 0 {
 		channel = params[0]
 	}
 
-	client.ActiveChannel = channel
 	for i, c := range client.Channels {
 		if c.Name == channel {
 			client.ActiveChannelIndex = i
+			client.ActiveChannel = channel
 			break
-		} else if i == len(client.Channels)-1 {
-			client.Channels = append(client.Channels, irc.Channel{
-				Name:  channel,
-				Users: make(map[string]irc.User),
-			})
-			client.ActiveChannelIndex = len(client.Channels) - 1
-			cmdsToProcess = append(cmdsToProcess, cmds.UpdateTabBar)
 		}
 	}
 	client.SendCommand(commands.JOIN, params...)
 
-	cmdsToProcess = append(cmdsToProcess, cmds.SwitchChannels)
-
-	return tea.Batch(cmdsToProcess...)
+	return cmds.SwitchChannels
 }
 
 func HandleSlashCommand(msg string, client *irc.Client) tea.Cmd {
