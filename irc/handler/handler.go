@@ -23,10 +23,10 @@ import (
 	"log"
 	"strings"
 
+	"github.com/illusionman1212/gorc/cmds"
 	"github.com/illusionman1212/gorc/irc"
 	"github.com/illusionman1212/gorc/irc/commands"
 	"github.com/illusionman1212/gorc/irc/parser"
-	"github.com/illusionman1212/gorc/ui/mainscreen"
 )
 
 func ReadLoop(client *irc.Client) {
@@ -83,7 +83,7 @@ func handleJoin(msg parser.IRCMessage, client *irc.Client) {
 	}
 
 	if channel == client.ActiveChannel {
-		client.Tea.Send(mainscreen.SwitchChannels())
+		client.Tea.Send(cmds.SwitchChannels())
 	}
 }
 
@@ -101,7 +101,7 @@ func handleQuit(msg parser.IRCMessage, client *irc.Client) {
 		delete(client.Channels[i].Users, nick)
 	}
 
-	client.Tea.Send(mainscreen.SwitchChannels())
+	client.Tea.Send(cmds.SwitchChannels())
 }
 
 func handlePart(msg parser.IRCMessage, client *irc.Client) {
@@ -121,7 +121,7 @@ func handlePart(msg parser.IRCMessage, client *irc.Client) {
 		}
 	}
 
-	client.Tea.Send(mainscreen.SwitchChannels())
+	client.Tea.Send(cmds.SwitchChannels())
 }
 
 func handleWELCOME(msg parser.IRCMessage, client *irc.Client) {
@@ -216,7 +216,7 @@ func handleNAMREPLY(msg parser.IRCMessage, client *irc.Client) {
 	}
 
 	if channel == client.ActiveChannel {
-		client.Tea.Send(mainscreen.SwitchChannels())
+		client.Tea.Send(cmds.SwitchChannels())
 	}
 }
 
@@ -293,5 +293,5 @@ func HandleCommand(msg parser.IRCMessage, client *irc.Client) {
 
 	// send a receivedIRCmsg tea message so the ui can update
 	// we also use this tea message to scroll the viewport down
-	client.Tea.Send(mainscreen.ReceivedIRCMsg())
+	client.Tea.Send(cmds.ReceivedIRCMsg())
 }

@@ -20,6 +20,8 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/illusionman1212/gorc/cmds"
 )
 
 type InputState struct {
@@ -51,7 +53,7 @@ func (s InputState) Update(msg tea.Msg) (InputState, tea.Cmd) {
 
 			s.Input.Reset()
 
-			return s, s.SendingPrivMsg(value)
+			return s, cmds.SendPrivMsg(value)
 		}
 	}
 

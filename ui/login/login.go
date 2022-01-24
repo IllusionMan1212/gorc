@@ -23,6 +23,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/illusionman1212/gorc/cmds"
 	"github.com/illusionman1212/gorc/ui"
 )
 
@@ -79,7 +80,7 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		case " ", "enter":
 			// run the newClient cmd when pressing "enter" while focused on the connect button
 			if key == "enter" && s.FocusIndex == len(s.Inputs)+1 {
-				return s, connect
+				return s, cmds.Connect
 			}
 
 			// toggle tls state when pressing "enter" or "space" while focused on the checkbox

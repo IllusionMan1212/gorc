@@ -72,6 +72,12 @@ type Client struct {
 
 	// Reference to the bubbletea program
 	Tea *tea.Program
+
+	// Index of the first visible tab in the tab bar
+	FirstTabIndexInTabBar int
+
+	// Index of the last visible tab in the tab bar
+	LastTabIndexInTabBar int
 }
 
 const CRLF = "\r\n"

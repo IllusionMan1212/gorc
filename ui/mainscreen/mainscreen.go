@@ -24,8 +24,10 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/illusionman1212/gorc/cmds"
 	"github.com/illusionman1212/gorc/irc"
 	"github.com/illusionman1212/gorc/irc/commands"
+	"github.com/illusionman1212/gorc/irc/handler"
 	"github.com/illusionman1212/gorc/ui"
 )
 
@@ -42,10 +44,6 @@ const (
 	Left TabDirection = iota
 	Right
 )
-
-// NOTE: I ABSOLUTELY HATE THIS
-var FirstTabIndexInTabBar = 0
-var LastTabIndexInTabBar = 0
 
 type State struct {
 	Client                *irc.Client
@@ -74,10 +72,10 @@ func NewMainScreen(client *irc.Client) State {
 
 func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 	var cmd tea.Cmd
-	var cmds []tea.Cmd
+	var cmdsToProcess []tea.Cmd
 
 	switch msg := msg.(type) {
-	case ReceivedIRCMsgMsg:
+	case cmds.ReceivedIRCMsgMsg:
 		wasAtBottom := s.Viewport.AtBottom()
 		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannelIndex].History)
 
@@ -85,39 +83,10 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 			s.Viewport.GotoBottom()
 		}
 		return s, nil
-	case SendPrivMsg:
-		// for sending slash commands
-		// TODO: make this better
+	case cmds.SendPrivMsgMsg:
 		if msg.Msg[0] == '/' {
-			substrs := strings.SplitN(msg.Msg[1:], " ", 2)
-			command := substrs[0]
-			var params []string
-			if len(substrs) > 1 {
-				params = strings.Split(substrs[1], " ")
-			}
-
-			if strings.ToUpper(command) == commands.JOIN {
-				// TODO: handle comma separated channels
-				channel := params[0]
-				s.Client.ActiveChannel = channel
-				for i, c := range s.Client.Channels {
-					if c.Name == channel {
-						s.Client.ActiveChannelIndex = i
-						break
-					} else if i == len(s.Client.Channels)-1 {
-						s.Client.Channels = append(s.Client.Channels, irc.Channel{
-							Name:  channel,
-							Users: make(map[string]irc.User),
-						})
-						s.Client.ActiveChannelIndex = len(s.Client.Channels) - 1
-						LastTabIndexInTabBar = len(s.Client.Channels) - 1
-						s.TabRenderingDirection = Left
-					}
-				}
-				s.Client.SendCommand(commands.JOIN, params...)
-				return s, SwitchChannels
-			}
-			s.Client.SendCommand(command, params...)
+			cmd = handler.HandleSlashCommand(msg.Msg, s.Client)
+			return s, cmd
 		} else {
 			if s.Client.ActiveChannel != s.Client.Host {
 				fullMsg := s.Client.Nickname + ": " + msg.Msg
@@ -130,14 +99,16 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		}
 
 		return s, nil
-	case SwitchChannelsMsg:
+	case cmds.SwitchChannelsMsg:
 		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannelIndex].History)
 		s.Viewport.GotoBottom()
 
 		*s.SidePanel, cmd = s.SidePanel.Update(msg)
-		cmds = append(cmds, cmd)
-
-		return s, tea.Batch(cmds...)
+		return s, cmd
+	case cmds.UpdateTabBarMsg:
+		s.Client.LastTabIndexInTabBar = len(s.Client.Channels) - 1
+		s.TabRenderingDirection = Left
+		return s, nil
 	case tea.KeyMsg:
 		key := msg.String()
 		switch key {
@@ -160,7 +131,6 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 				s.InputBox.Blur()
 				s.SidePanel.Blur()
 			case InputBox:
-				cmds = append(cmds, textinput.Blink)
 				s.Blur()
 				s.InputBox.Focus()
 				s.SidePanel.Blur()
@@ -170,7 +140,7 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 				s.SidePanel.Focus()
 			}
 
-			return s, tea.Batch(cmds...)
+			return s, textinput.Blink
 		case "right", "left":
 			// we need this so that the viewport doesnt scroll to the bottom
 			if len(s.Client.Channels) == 1 {
@@ -189,16 +159,16 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 				s.Client.ActiveChannelIndex = len(s.Client.Channels) - 1
 			}
 
-			if s.Client.ActiveChannelIndex > LastTabIndexInTabBar {
+			if s.Client.ActiveChannelIndex > s.Client.LastTabIndexInTabBar {
 				s.TabRenderingDirection = Left
-				LastTabIndexInTabBar = s.Client.ActiveChannelIndex
-			} else if s.Client.ActiveChannelIndex < FirstTabIndexInTabBar {
-				FirstTabIndexInTabBar = s.Client.ActiveChannelIndex
+				s.Client.LastTabIndexInTabBar = s.Client.ActiveChannelIndex
+			} else if s.Client.ActiveChannelIndex < s.Client.FirstTabIndexInTabBar {
+				s.Client.FirstTabIndexInTabBar = s.Client.ActiveChannelIndex
 				s.TabRenderingDirection = Right
 			}
 
 			s.Client.ActiveChannel = s.Client.Channels[s.Client.ActiveChannelIndex].Name
-			return s, SwitchChannels
+			return s, cmds.SwitchChannels
 		case "g":
 			if s.FocusIndex == Viewport {
 				s.Viewport.GotoTop()
@@ -213,16 +183,16 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 	switch s.FocusIndex {
 	case Viewport:
 		*s.Viewport, cmd = s.Viewport.Update(msg)
-		cmds = append(cmds, cmd)
+		cmdsToProcess = append(cmdsToProcess, cmd)
 	case InputBox:
 		s.InputBox, cmd = s.InputBox.Update(msg)
-		cmds = append(cmds, cmd)
+		cmdsToProcess = append(cmdsToProcess, cmd)
 	}
 
 	*s.SidePanel, cmd = s.SidePanel.Update(msg)
-	cmds = append(cmds, cmd)
+	cmdsToProcess = append(cmdsToProcess, cmd)
 
-	return s, tea.Batch(cmds...)
+	return s, tea.Batch(cmdsToProcess...)
 }
 
 func (s *State) Focus() {
@@ -279,7 +249,7 @@ func (s State) buildTabBar(rightArrow string, leftArrow string) string {
 
 	switch s.TabRenderingDirection {
 	case Left:
-		for i := LastTabIndexInTabBar; i >= 0; i-- {
+		for i := s.Client.LastTabIndexInTabBar; i >= 0; i-- {
 			if s.Client.Channels[i].Name == s.Client.ActiveChannel {
 				renderedTabs = append([]string{activeTab.Render(s.Client.Channels[i].Name)}, renderedTabs...)
 			} else {
@@ -293,14 +263,14 @@ func (s State) buildTabBar(rightArrow string, leftArrow string) string {
 
 			if lipgloss.Width(tabs) > lipgloss.Width(s.Viewport.View())-lipgloss.Width(leftArrow)-lipgloss.Width(rightArrow) {
 				// set the first tab to be displayed to the index of the previous tab in the loop
-				FirstTabIndexInTabBar = i + 1
+				s.Client.FirstTabIndexInTabBar = i + 1
 				// dont render the newly added tab
 				renderedTabs = renderedTabs[1:]
 				break
 			}
 		}
 	case Right:
-		for i := FirstTabIndexInTabBar; i < len(s.Client.Channels); i++ {
+		for i := s.Client.FirstTabIndexInTabBar; i < len(s.Client.Channels); i++ {
 			if s.Client.Channels[i].Name == s.Client.ActiveChannel {
 				renderedTabs = append(renderedTabs, activeTab.Render(s.Client.Channels[i].Name))
 			} else {
@@ -314,7 +284,7 @@ func (s State) buildTabBar(rightArrow string, leftArrow string) string {
 
 			if lipgloss.Width(tabs) > lipgloss.Width(s.Viewport.View())-lipgloss.Width(leftArrow)-lipgloss.Width(rightArrow) {
 				// set the last tab to be displayed to the index of the previous tab in the loop
-				LastTabIndexInTabBar = i - 1
+				s.Client.LastTabIndexInTabBar = i - 1
 				// dont render the newly added tab
 				renderedTabs = renderedTabs[:len(renderedTabs)-1]
 				break
@@ -337,11 +307,11 @@ func (s State) View() string {
 	tabs := s.buildTabBar(leftArrow, rightArrow)
 	tabBar := strings.Builder{}
 
-	if FirstTabIndexInTabBar != 0 {
+	if s.Client.FirstTabIndexInTabBar != 0 {
 		leftArrow = leftArrowLit.Render("❰")
 	}
 
-	if LastTabIndexInTabBar != len(s.Client.Channels)-1 {
+	if s.Client.LastTabIndexInTabBar != len(s.Client.Channels)-1 {
 		rightArrow = rightArrowLit.Render("❱")
 	}
 

@@ -1,5 +1,5 @@
 // gorc project
-// Copyright (C) 2021 IllusionMan1212
+// Copyright (C) 2022 IllusionMan1212
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,19 +14,36 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see https://www.gnu.org/licenses.
 
-package mainscreen
+package cmds
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/illusionman1212/gorc/irc"
 )
 
-type SendPrivMsg struct {
+type ConnectMsg struct{}
+
+func Connect() tea.Msg {
+	return ConnectMsg{}
+}
+
+func Quit(client *irc.Client) tea.Cmd {
+	return func() tea.Msg {
+		if client.TcpConn != nil {
+			client.SendCommand("QUIT")
+		}
+
+		return tea.Quit()
+	}
+}
+
+type SendPrivMsgMsg struct {
 	Msg string
 }
 
-func (s InputState) SendingPrivMsg(msg string) tea.Cmd {
+func SendPrivMsg(msg string) tea.Cmd {
 	return func() tea.Msg {
-		return SendPrivMsg{Msg: msg}
+		return SendPrivMsgMsg{Msg: msg}
 	}
 }
 
@@ -40,4 +57,10 @@ type SwitchChannelsMsg struct{}
 
 func SwitchChannels() tea.Msg {
 	return SwitchChannelsMsg{}
+}
+
+type UpdateTabBarMsg struct{}
+
+func UpdateTabBar() tea.Msg {
+	return UpdateTabBarMsg{}
 }

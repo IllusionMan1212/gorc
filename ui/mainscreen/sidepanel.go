@@ -24,6 +24,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/illusionman1212/gorc/cmds"
 	"github.com/illusionman1212/gorc/irc"
 )
 
@@ -70,10 +71,10 @@ func NewSidePanel(client *irc.Client) *SidePanelState {
 
 func (s SidePanelState) Update(msg tea.Msg) (SidePanelState, tea.Cmd) {
 	var cmd tea.Cmd
-	var cmds []tea.Cmd
+	var cmdsToProcess []tea.Cmd
 
 	switch msg := msg.(type) {
-	case SwitchChannelsMsg:
+	case cmds.SwitchChannelsMsg:
 		s.UpdateNicks()
 		return s, nil
 	case tea.KeyMsg:
@@ -92,10 +93,10 @@ func (s SidePanelState) Update(msg tea.Msg) (SidePanelState, tea.Cmd) {
 
 	if s.Focused {
 		s.Viewport, cmd = s.Viewport.Update(msg)
-		cmds = append(cmds, cmd)
+		cmdsToProcess = append(cmdsToProcess, cmd)
 	}
 
-	return s, tea.Batch(cmds...)
+	return s, tea.Batch(cmdsToProcess...)
 }
 
 func (s *SidePanelState) Focus() {

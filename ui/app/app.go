@@ -19,6 +19,7 @@ package app
 import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/illusionman1212/gorc/cmds"
 	"github.com/illusionman1212/gorc/irc"
 	"github.com/illusionman1212/gorc/irc/handler"
 	"github.com/illusionman1212/gorc/ui"
@@ -69,7 +70,7 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
-			return s, s.Quit
+			return s, cmds.Quit(s.Client)
 		}
 
 	case tea.WindowSizeMsg:
@@ -80,7 +81,7 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		s.UI.MainScreen.SetSize(msg.Width, msg.Height)
 
 		return s, nil
-	case login.ConnectingMsg:
+	case cmds.ConnectMsg:
 		host := s.UI.Login.Inputs[0].Value()
 		port := s.UI.Login.Inputs[1].Value()
 		channel := s.UI.Login.Inputs[2].Value()
@@ -94,7 +95,7 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		s.Client.Initialize(host, port, tlsEnabled)
 		s.Client.Register(nickname, password, channel)
 
-		mainscreen.LastTabIndexInTabBar = len(s.Client.Channels) - 1
+		s.Client.LastTabIndexInTabBar = len(s.Client.Channels) - 1
 
 		go handler.ReadLoop(s.Client)
 
