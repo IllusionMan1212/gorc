@@ -18,6 +18,7 @@ package login
 
 import (
 	"github.com/charmbracelet/lipgloss"
+	"github.com/illusionman1212/gorc/ui"
 )
 
 const WelcomeMsg = `                                        
@@ -36,37 +37,40 @@ const WelcomeMsg = `
 
 var (
 	FocusedButton = lipgloss.NewStyle().
-			Background(lipgloss.Color("105")).
-			Foreground(lipgloss.Color("#000")).
+			Border(lipgloss.NormalBorder()).
+			BorderForeground(ui.AccentColor).
+			Foreground(ui.AccentColor).
 			MarginTop(1).
 			Padding(0, 2).
 			Align(lipgloss.Center).
+			Bold(true).
 			Render("Connect")
 	BlurredButton = lipgloss.NewStyle().
-			Background(lipgloss.Color("#505050")).
-			Foreground(lipgloss.Color("#EEEEEE")).
+			Border(lipgloss.NormalBorder()).
+			BorderForeground(ui.PrimaryColor).
+			Foreground(ui.PrimaryColor).
 			MarginTop(1).
 			Padding(0, 2).
 			Align(lipgloss.Center).
 			Render("Connect")
 
 	FocusedCheckbox = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("105")).
+			Foreground(ui.AccentColor).
 			MarginTop(1).
 			Render("[ ] Enable TLS")
 
 	BlurredCheckbox = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#EEEEEE")).
+			Foreground(ui.PrimaryColor).
 			MarginTop(1).
 			Render("[ ] Enable TLS")
 
 	FocusedCheckboxChecked = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("105")).
+				Foreground(ui.AccentColor).
 				MarginTop(1).
 				Render("[x] Enable TLS")
 
 	BlurredCheckboxChecked = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#EEEEEE")).
+				Foreground(ui.PrimaryColor).
 				MarginTop(1).
 				Render("[x] Enable TLS")
 
@@ -74,5 +78,12 @@ var (
 			Align(lipgloss.Center)
 
 	WelcomeMsgStyle = lipgloss.NewStyle().
-			Align(lipgloss.Center)
+			Align(lipgloss.Center).
+			Foreground(ui.PrimaryColor)
+
+	CursorStyle = lipgloss.NewStyle().
+			Foreground(ui.AccentColor)
+	FocusedStyle = lipgloss.NewStyle().
+			Foreground(ui.AccentColor)
+	NoStyle = lipgloss.NewStyle()
 )

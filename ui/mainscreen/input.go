@@ -22,6 +22,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/illusionman1212/gorc/cmds"
+	"github.com/illusionman1212/gorc/ui"
 )
 
 type InputState struct {
@@ -64,12 +65,12 @@ func (s InputState) Update(msg tea.Msg) (InputState, tea.Cmd) {
 
 func (s *InputState) Focus() {
 	s.Input.Focus()
-	s.Style = s.Style.Copy().BorderForeground(lipgloss.Color("105"))
+	s.Style = s.Style.Copy().BorderForeground(ui.AccentColor)
 }
 
 func (s *InputState) Blur() {
 	s.Input.Blur()
-	s.Style = s.Style.Copy().BorderForeground(lipgloss.Color("#EEE"))
+	s.Style = s.Style.Copy().BorderForeground(ui.PrimaryColor)
 }
 
 func (s *InputState) SetSize(width int) {

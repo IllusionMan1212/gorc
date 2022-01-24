@@ -26,15 +26,15 @@ var (
 			Border(lipgloss.NormalBorder(), true).
 			Padding(0, 1).
 			Width(ui.MainStyle.GetWidth()).
-			BorderForeground(lipgloss.Color("105"))
+			BorderForeground(ui.AccentColor)
 	MessagesStyle = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder(), false, true, true, true).
 			Width(ui.MainStyle.GetWidth() * 8 / 10).
-			BorderForeground(lipgloss.Color("#EEE"))
+			BorderForeground(ui.PrimaryColor)
 	SidePanelStyle = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder(), true).
 			Width(ui.MainStyle.GetWidth() * 2 / 10).
-			BorderForeground(lipgloss.Color("#EEE"))
+			BorderForeground(ui.PrimaryColor)
 
 	activeTabBorder = lipgloss.Border{
 		Top:         "─",
@@ -46,7 +46,7 @@ var (
 		BottomLeft:  "┘",
 		BottomRight: "└",
 	}
-	highlight = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "105"}
+
 	tabBorder = lipgloss.Border{
 		Top:         "─",
 		Bottom:      "─",
@@ -82,28 +82,32 @@ var (
 
 	tab = lipgloss.NewStyle().
 		Border(tabBorder, true).
+		Foreground(ui.PrimaryColor).
 		Padding(0, 1)
 
 	activeTab = tab.Copy().
 			Border(activeTabBorder, true).
-			BorderForeground(highlight).
-			Foreground(lipgloss.Color("105")).
+			BorderForeground(ui.AccentColor).
+			Foreground(ui.AccentColor).
 			Italic(true).
 			Bold(true)
 
 	leftArrowDim = tab.Copy().
 			Border(leftArrowBorder, true).
-			Foreground(lipgloss.Color("#444"))
+			BorderForeground(ui.PrimaryColor).
+			Foreground(ui.ArrowsDimColor)
 	rightArrowDim = tab.Copy().
 			Border(rightArrowBorder, true).
-			Foreground(lipgloss.Color("#444"))
+			BorderForeground(ui.PrimaryColor).
+			Foreground(ui.ArrowsDimColor)
 
 	leftArrowLit = tab.Copy().
 			Border(leftArrowBorder, true).
-			Foreground(lipgloss.Color("#FFF"))
+			Foreground(ui.PrimaryColor)
 	rightArrowLit = tab.Copy().
 			Border(rightArrowBorder, true).
-			Foreground(lipgloss.Color("#FFF"))
+			Foreground(ui.PrimaryColor)
 
-	tabLine = lipgloss.NewStyle()
+	tabLine = lipgloss.NewStyle().
+		Foreground(ui.PrimaryColor)
 )

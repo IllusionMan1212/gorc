@@ -23,7 +23,18 @@ var (
 			Width(0).
 			Height(0)
 
-	CursorStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("105"))
-	FocusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("105"))
-	NoStyle      = lipgloss.NewStyle()
+	AccentColor = lipgloss.AdaptiveColor{
+		Dark:  "#1C6DD0",
+		Light: "#1C6DD0",
+	}
+
+	PrimaryColor = lipgloss.AdaptiveColor{
+		Dark:  "#EEE",
+		Light: "#151515",
+	}
+
+	ArrowsDimColor = lipgloss.AdaptiveColor{
+		Dark:  "#444",
+		Light: "#AAA",
+	}
 )

@@ -47,7 +47,7 @@ func NewLogin() State {
 	var t textinput.Model
 	for i := range state.Inputs {
 		t = textinput.New()
-		t.CursorStyle = ui.CursorStyle
+		t.CursorStyle = CursorStyle
 		t.Prompt = "| "
 
 		switch i {
@@ -55,7 +55,7 @@ func NewLogin() State {
 			t.Placeholder = "Host"
 			t.Focus()
 			t.CharLimit = 40
-			t.TextStyle = ui.FocusedStyle
+			t.TextStyle = FocusedStyle
 		case 1:
 			t.Placeholder = "Port"
 			t.CharLimit = 5
@@ -111,14 +111,14 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 			for i := 0; i <= len(s.Inputs)-1; i++ {
 				if i == s.FocusIndex {
 					cmds[i] = s.Inputs[i].Focus()
-					s.Inputs[i].PromptStyle = ui.FocusedStyle
-					s.Inputs[i].TextStyle = ui.FocusedStyle
+					s.Inputs[i].PromptStyle = FocusedStyle
+					s.Inputs[i].TextStyle = FocusedStyle
 					continue
 				}
 
 				s.Inputs[i].Blur()
-				s.Inputs[i].PromptStyle = ui.NoStyle
-				s.Inputs[i].TextStyle = ui.NoStyle
+				s.Inputs[i].PromptStyle = NoStyle
+				s.Inputs[i].TextStyle = NoStyle
 			}
 
 			return s, tea.Batch(cmds...)

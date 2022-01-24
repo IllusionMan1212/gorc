@@ -196,24 +196,24 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 }
 
 func (s *State) Focus() {
-	s.Viewport.Style = s.Viewport.Style.Copy().BorderForeground(lipgloss.Color("105"))
+	s.Viewport.Style = s.Viewport.Style.Copy().BorderForeground(ui.AccentColor)
 
-	tab = tab.Copy().BorderForeground(lipgloss.Color("105"))
-	leftArrowDim = leftArrowDim.Copy().BorderForeground(lipgloss.Color("105"))
-	rightArrowDim = rightArrowDim.Copy().BorderForeground(lipgloss.Color("105"))
-	leftArrowLit = leftArrowLit.Copy().BorderForeground(lipgloss.Color("105"))
-	rightArrowLit = rightArrowLit.Copy().BorderForeground(lipgloss.Color("105"))
-	tabLine = tabLine.Copy().Foreground(lipgloss.Color("105"))
+	tab = tab.Copy().BorderForeground(ui.AccentColor)
+	leftArrowDim = leftArrowDim.Copy().BorderForeground(ui.AccentColor)
+	rightArrowDim = rightArrowDim.Copy().BorderForeground(ui.AccentColor)
+	leftArrowLit = leftArrowLit.Copy().BorderForeground(ui.AccentColor)
+	rightArrowLit = rightArrowLit.Copy().BorderForeground(ui.AccentColor)
+	tabLine = tabLine.Copy().Foreground(ui.AccentColor)
 }
 func (s *State) Blur() {
-	s.Viewport.Style = s.Viewport.Style.Copy().BorderForeground(lipgloss.Color("#EEE"))
+	s.Viewport.Style = s.Viewport.Style.Copy().BorderForeground(ui.PrimaryColor)
 
-	tab = tab.Copy().UnsetBorderForeground()
-	leftArrowDim = leftArrowDim.Copy().UnsetBorderForeground()
-	rightArrowDim = rightArrowDim.Copy().UnsetBorderForeground()
-	leftArrowLit = leftArrowLit.Copy().UnsetBorderForeground()
-	rightArrowLit = rightArrowLit.Copy().UnsetBorderForeground()
-	tabLine = tabLine.Copy().UnsetForeground()
+	tab = tab.Copy().BorderForeground(ui.PrimaryColor)
+	leftArrowDim = leftArrowDim.Copy().BorderForeground(ui.PrimaryColor)
+	rightArrowDim = rightArrowDim.Copy().BorderForeground(ui.PrimaryColor)
+	leftArrowLit = leftArrowLit.Copy().BorderForeground(ui.PrimaryColor)
+	rightArrowLit = rightArrowLit.Copy().BorderForeground(ui.PrimaryColor)
+	tabLine = tabLine.Copy().Foreground(ui.PrimaryColor)
 }
 
 func (s *State) SetSize(width, height int) {

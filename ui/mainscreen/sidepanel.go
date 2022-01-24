@@ -23,9 +23,9 @@ import (
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/illusionman1212/gorc/cmds"
 	"github.com/illusionman1212/gorc/irc"
+	"github.com/illusionman1212/gorc/ui"
 )
 
 type SidePanelState struct {
@@ -101,12 +101,12 @@ func (s SidePanelState) Update(msg tea.Msg) (SidePanelState, tea.Cmd) {
 
 func (s *SidePanelState) Focus() {
 	s.Focused = true
-	s.Viewport.Style = s.Viewport.Style.BorderForeground(lipgloss.Color("105"))
+	s.Viewport.Style = s.Viewport.Style.BorderForeground(ui.AccentColor)
 }
 
 func (s *SidePanelState) Blur() {
 	s.Focused = false
-	s.Viewport.Style = s.Viewport.Style.BorderForeground(lipgloss.Color("#EEE"))
+	s.Viewport.Style = s.Viewport.Style.BorderForeground(ui.PrimaryColor)
 }
 
 func (s *SidePanelState) UpdateNicks() {
