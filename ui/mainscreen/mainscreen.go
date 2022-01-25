@@ -142,6 +142,11 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 
 			return s, textinput.Blink
 		case "right", "left":
+			// only cycle between tabs if focus isn't on the inputbox
+			if s.FocusIndex == InputBox {
+				break
+			}
+
 			// we need this so that the viewport doesnt scroll to the bottom
 			if len(s.Client.Channels) == 1 {
 				return s, nil
