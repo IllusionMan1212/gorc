@@ -136,13 +136,7 @@ func (c *Client) Register(nick string, password string, channel string) {
 	c.SendCommand("CAP", "END")
 	// joining a channel when registering is optional
 	if channel != "" {
-		c.ActiveChannel = channel
 		c.SendCommand("JOIN", channel)
-		c.Channels = append(c.Channels, Channel{
-			Name:  c.ActiveChannel,
-			Users: make(map[string]User),
-		})
-		c.ActiveChannelIndex = 1
 	}
 }
 
