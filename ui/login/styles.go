@@ -57,22 +57,22 @@ var (
 	FocusedCheckbox = lipgloss.NewStyle().
 			Foreground(ui.AccentColor).
 			MarginTop(1).
-			Render("[ ] Enable TLS")
+			Render("✕ Enable TLS")
 
 	BlurredCheckbox = lipgloss.NewStyle().
 			Foreground(ui.PrimaryColor).
 			MarginTop(1).
-			Render("[ ] Enable TLS")
+			Render("✕ Enable TLS")
 
 	FocusedCheckboxChecked = lipgloss.NewStyle().
 				Foreground(ui.AccentColor).
 				MarginTop(1).
-				Render("[x] Enable TLS")
+				Render("🗸 Enable TLS")
 
 	BlurredCheckboxChecked = lipgloss.NewStyle().
 				Foreground(ui.PrimaryColor).
 				MarginTop(1).
-				Render("[x] Enable TLS")
+				Render("🗸 Enable TLS")
 
 	DialogStyle = lipgloss.NewStyle().
 			Align(lipgloss.Center)
