@@ -95,11 +95,11 @@ var (
 	leftArrowDim = tab.Copy().
 			Border(leftArrowBorder, true).
 			BorderForeground(ui.PrimaryColor).
-			Foreground(ui.ArrowsDimColor)
+			Foreground(ui.DisabledColor)
 	rightArrowDim = tab.Copy().
 			Border(rightArrowBorder, true).
 			BorderForeground(ui.PrimaryColor).
-			Foreground(ui.ArrowsDimColor)
+			Foreground(ui.DisabledColor)
 
 	leftArrowLit = tab.Copy().
 			Border(leftArrowBorder, true).

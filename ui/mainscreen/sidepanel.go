@@ -119,7 +119,7 @@ func (s *SidePanelState) UpdateNicks() {
 func (s *SidePanelState) SetSize(width, height, inputboxHeight int) {
 	// We ceil here because width is an int and some fractions are lost
 	// -1 is for some extra invisible margin or padding between the sidepanel and the inputbox
-	newWidth := int(math.Ceil(math.Ceil((float64(width) * 2.0 / 10.0)) - float64(s.Viewport.Style.GetHorizontalFrameSize())))
+	newWidth := int(math.Ceil(math.Ceil((float64(width) * 2 / 10)) - float64(s.Viewport.Style.GetHorizontalFrameSize())))
 	newHeight := height - inputboxHeight - s.Viewport.Style.GetVerticalFrameSize() - 1
 
 	s.Viewport.Style = s.Viewport.Style.Width(newWidth)

@@ -225,10 +225,10 @@ func (s *State) SetSize(width, height int) {
 	s.InputBox.SetSize(width)
 	s.SidePanel.SetSize(width, height, s.InputBox.Style.GetVerticalFrameSize())
 
-	// We floor here because width is an int and some fractions are lost
+	// We floor because width is an int and some fractions are lost when casting
 	// and also because we ceil the sidepanel's width
 	// -3 for the tab bar height
-	newWidth := int(math.Floor(float64(width)*8.0/10.0) - float64(s.Viewport.Style.GetHorizontalFrameSize()))
+	newWidth := int(math.Floor(float64(width)*8/10) - float64(s.Viewport.Style.GetHorizontalFrameSize()))
 	newHeight := height - s.InputBox.Style.GetVerticalFrameSize() - s.Viewport.Style.GetVerticalFrameSize() - 3
 
 	s.Viewport.Width = newWidth

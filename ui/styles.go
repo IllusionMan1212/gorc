@@ -33,8 +33,13 @@ var (
 		Light: "#151515",
 	}
 
-	ArrowsDimColor = lipgloss.AdaptiveColor{
+	DisabledColor = lipgloss.AdaptiveColor{
 		Dark:  "#444",
 		Light: "#AAA",
+	}
+
+	DisabledColorFocus = lipgloss.AdaptiveColor{
+		Dark:  "#666",
+		Light: "#CCC",
 	}
 )

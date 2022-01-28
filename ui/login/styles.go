@@ -36,6 +36,22 @@ const WelcomeMsg = `
 `
 
 var (
+	BlurredDisabledButton = lipgloss.NewStyle().
+				Border(lipgloss.NormalBorder()).
+				BorderForeground(ui.DisabledColor).
+				Foreground(ui.DisabledColor).
+				MarginTop(1).
+				Padding(0, 2).
+				Align(lipgloss.Center).
+				Render("Connect")
+	FocusedDisabledButton = lipgloss.NewStyle().
+				Border(lipgloss.NormalBorder()).
+				BorderForeground(ui.DisabledColorFocus).
+				Foreground(ui.DisabledColorFocus).
+				MarginTop(1).
+				Padding(0, 2).
+				Align(lipgloss.Center).
+				Render("Connect")
 	FocusedButton = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder()).
 			BorderForeground(ui.AccentColor).
@@ -57,22 +73,22 @@ var (
 	FocusedCheckbox = lipgloss.NewStyle().
 			Foreground(ui.AccentColor).
 			MarginTop(1).
-			Render("✕ Enable TLS")
+			Render("TLS Enabled [✕]")
 
 	BlurredCheckbox = lipgloss.NewStyle().
 			Foreground(ui.PrimaryColor).
 			MarginTop(1).
-			Render("✕ Enable TLS")
+			Render("TLS Enabled [✕]")
 
 	FocusedCheckboxChecked = lipgloss.NewStyle().
 				Foreground(ui.AccentColor).
 				MarginTop(1).
-				Render("🗸 Enable TLS")
+				Render("TLS Enabled [🗸]")
 
 	BlurredCheckboxChecked = lipgloss.NewStyle().
 				Foreground(ui.PrimaryColor).
 				MarginTop(1).
-				Render("🗸 Enable TLS")
+				Render("TLS Enabled [🗸]")
 
 	DialogStyle = lipgloss.NewStyle().
 			Align(lipgloss.Center)

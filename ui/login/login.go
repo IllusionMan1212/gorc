@@ -28,27 +28,32 @@ import (
 )
 
 type State struct {
-	FocusIndex      int
-	Inputs          []textinput.Model
-	TLS             bool
-	DialogStyle     lipgloss.Style
-	WelcomeMsgStyle lipgloss.Style
-	Style           lipgloss.Style
+	FocusIndex                int
+	Inputs                    []textinput.Model
+	TLS                       bool
+	CanConnect                bool
+	ConnectButtonBlurredStyle string
+	ConnectButtonFocusedStyle string
+	DialogStyle               lipgloss.Style
+	WelcomeMsgStyle           lipgloss.Style
+	Style                     lipgloss.Style
 }
 
 func NewLogin() State {
 	state := State{
-		Inputs:          make([]textinput.Model, 5),
-		DialogStyle:     DialogStyle.Copy(),
-		WelcomeMsgStyle: WelcomeMsgStyle.Copy(),
-		Style:           ui.MainStyle.Copy(),
+		Inputs:                    make([]textinput.Model, 5),
+		ConnectButtonBlurredStyle: BlurredDisabledButton,
+		ConnectButtonFocusedStyle: FocusedDisabledButton,
+		DialogStyle:               DialogStyle.Copy(),
+		WelcomeMsgStyle:           WelcomeMsgStyle.Copy(),
+		Style:                     ui.MainStyle.Copy(),
 	}
 
 	var t textinput.Model
 	for i := range state.Inputs {
 		t = textinput.New()
 		t.CursorStyle = CursorStyle
-		t.Prompt = "| "
+		t.Prompt = ""
 
 		switch i {
 		case 0:
@@ -85,7 +90,8 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		switch key {
 		case " ", "enter":
 			// run the Connect cmd when pressing "enter" while focused on the connect button
-			if key == "enter" && s.FocusIndex == len(s.Inputs)+1 {
+			// if the CanConnect flag is set
+			if key == "enter" && s.FocusIndex == len(s.Inputs)+1 && s.CanConnect {
 				return s, cmds.Connect
 			}
 
@@ -137,6 +143,16 @@ func (s *State) updateInputs(msg tea.Msg) tea.Cmd {
 		s.Inputs[i], cmds[i] = s.Inputs[i].Update(msg)
 	}
 
+	if s.Inputs[0].Value() != "" && s.Inputs[1].Value() != "" && s.Inputs[3].Value() != "" {
+		s.ConnectButtonBlurredStyle = BlurredButton
+		s.ConnectButtonFocusedStyle = FocusedButton
+		s.CanConnect = true
+	} else {
+		s.ConnectButtonBlurredStyle = BlurredDisabledButton
+		s.ConnectButtonFocusedStyle = FocusedDisabledButton
+		s.CanConnect = false
+	}
+
 	return tea.Batch(cmds...)
 }
 
@@ -175,9 +191,9 @@ func (s State) View() string {
 
 	fmt.Fprintf(&sb, "\n%s\n", *checkbox)
 
-	button := &BlurredButton
+	button := &s.ConnectButtonBlurredStyle
 	if s.FocusIndex == len(s.Inputs)+1 {
-		button = &FocusedButton
+		button = &s.ConnectButtonFocusedStyle
 	}
 	fmt.Fprintf(&sb, "\n%s\n", *button)
 
