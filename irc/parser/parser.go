@@ -22,6 +22,7 @@ import (
 )
 
 type IRCMessage struct {
+	// TODO: prefix: that will hold the timestamp AND the server message prefix (==)
 	Tags       Tags     // starts with @ | Optional
 	Source     string   // starts with : | Optional
 	Command    string   // can either be a string or a numeric value | Required
@@ -88,19 +89,23 @@ func ParseIRCMessage(line string) (IRCMessage, bool) {
 		params := trailingParamRegex.Split(substrs[1], 2)
 
 		parameters := multipleSpacesRegex.Split(params[0], -1)
-
-		// if there's a trailing parameter
-		// this parses empty params as well
-		if len(params) > 1 {
-			parameters = append(parameters, params[1])
-		}
+		finalParams := make([]string, 0)
 
 		// if we have 1 param and it starts with a colon
 		if len(params) == 1 && params[0][0] == ':' {
-			parameters[0] = params[0][1:]
+			finalParams = append(finalParams, params[0][1:])
 		}
 
-		ircMessage.Parameters = parameters
+		// if there's regular param(s) with trailing param
+		// this parses empty params as well
+		if len(params) > 1 {
+			finalParams = append(parameters, params[1])
+		} else {
+			// if we only have regular param(s)
+			finalParams = append(finalParams, parameters...)
+		}
+
+		ircMessage.Parameters = finalParams
 	}
 
 	return ircMessage, true
