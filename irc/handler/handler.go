@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/illusionman1212/gorc/cmds"
 	"github.com/illusionman1212/gorc/irc"
@@ -291,6 +293,95 @@ func handleGLOBALUSERS(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
+func handleWHOISUSER(msg parser.IRCMessage, client *irc.Client) {
+	nick := msg.Parameters[1]
+	user := msg.Parameters[2]
+	host := msg.Parameters[3]
+	realName := msg.Parameters[5]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	message := fmt.Sprintf(
+		"Nick: %s | User: %s | Host: %s | Real name: %s",
+		nick,
+		user,
+		host,
+		realName,
+	)
+
+	client.Channels[0].AppendMsg(msg.Timestamp, "WHOIS Information", msgOpts)
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleWHOISSERVER(msg parser.IRCMessage, client *irc.Client) {
+	server := msg.Parameters[2]
+	serverInfo := msg.Parameters[3]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	message := fmt.Sprintf(
+		"server: %s [%s]",
+		server,
+		serverInfo,
+	)
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleWHOISIDLE(msg parser.IRCMessage, client *irc.Client) {
+	idleSeconds := msg.Parameters[2]
+	connectedTimestamp, err := strconv.ParseInt(msg.Parameters[3], 10, 64)
+
+	if err != nil {
+		// TODO: return this err and handle it in the parent
+		log.Println(err)
+	}
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	since := time.Unix(connectedTimestamp, 0)
+
+	message := fmt.Sprintf(
+		"idle for: %s seconds, connected since: %s",
+		idleSeconds,
+		since.Format(time.ANSIC),
+	)
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleENDOFWHOIS(msg parser.IRCMessage, client *irc.Client) {
+	message := msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleWHOISCHANNELS(msg parser.IRCMessage, client *irc.Client) {
+	chans := msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	message := fmt.Sprintf("channels: %s", chans)
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
 func handleNAMREPLY(msg parser.IRCMessage, client *irc.Client) {
 	// TODO: do i need these
 	// client := msg.Parameters[0]
@@ -343,6 +434,72 @@ func handleMOTD(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, messageLine, msgOpts)
 }
 
+func handleWHOISHOST(msg parser.IRCMessage, client *irc.Client) {
+	message := msg.Parameters[1] + " " + msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleWHOISMODES(msg parser.IRCMessage, client *irc.Client) {
+	message := msg.Parameters[1] + " " + msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleNOSUCHSERVER(msg parser.IRCMessage, client *irc.Client) {
+	message := msg.Parameters[1] + " " + msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleNONICKNAMEGIVEN(msg parser.IRCMessage, client *irc.Client) {
+	message := msg.Parameters[1]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleNEEDMOREPARAMS(msg parser.IRCMessage, client *irc.Client) {
+	message := msg.Parameters[1] + " " + msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleALREADYREGISTERED(msg parser.IRCMessage, client *irc.Client) {
+	message := msg.Parameters[1]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
 func HandleCommand(msg parser.IRCMessage, client *irc.Client) {
 	// TODO: handle different commands
 	switch msg.Command {
@@ -378,6 +535,16 @@ func HandleCommand(msg parser.IRCMessage, client *irc.Client) {
 		handleLOCALUSERS(msg, client)
 	case commands.RPL_GLOBALUSERS:
 		handleGLOBALUSERS(msg, client)
+	case commands.RPL_WHOISUSER:
+		handleWHOISUSER(msg, client)
+	case commands.RPL_WHOISSERVER:
+		handleWHOISSERVER(msg, client)
+	case commands.RPL_WHOISIDLE:
+		handleWHOISIDLE(msg, client)
+	case commands.RPL_ENDOFWHOIS:
+		handleENDOFWHOIS(msg, client)
+	case commands.RPL_WHOISCHANNELS:
+		handleWHOISCHANNELS(msg, client)
 	case commands.RPL_NAMREPLY:
 		handleNAMREPLY(msg, client)
 	case commands.RPL_ENDOFNAMES:
@@ -396,6 +563,18 @@ func HandleCommand(msg parser.IRCMessage, client *irc.Client) {
 
 		// start a timeout and update said timeout on every RPL_MOTD
 		// and log an error if timeout ends without receiving this command.
+	case commands.RPL_WHOISHOST:
+		handleWHOISHOST(msg, client)
+	case commands.RPL_WHOISMODES:
+		handleWHOISMODES(msg, client)
+	case commands.ERR_NOSUCHSERVER:
+		handleNOSUCHSERVER(msg, client)
+	case commands.ERR_NONICKNAMEGIVEN:
+		handleNONICKNAMEGIVEN(msg, client)
+	case commands.ERR_NEEDMOREPARAMS:
+		handleNEEDMOREPARAMS(msg, client)
+	case commands.ERR_ALREADYREGISTERED:
+		handleALREADYREGISTERED(msg, client)
 	default:
 		fullMsg := fmt.Sprintf(
 			"%s %s %s %s",

@@ -16,12 +16,6 @@
 
 package commands
 
-/* --- IRC Ports --- */
-const (
-	INSECURE_PORT = 6667
-	SECURE_PORT   = 6697
-)
-
 /* --- Prohibited characters in channel names --- */
 const ( // do we need this as a client ????
 	SPACE  = " "  // 0x20
@@ -178,14 +172,14 @@ const (
 	RPL_TEXT            = "304" // irc2 - Not Implemented (TODO:)
 	RPL_UNAWAY          = "305" // RFC1459 - Not Implemented (TODO:)
 	RPL_NOWAWAY         = "306" // RFC1459 - Not Implemented (TODO:)
-	RPL_WHOISUSER       = "311" // RFC1459 - Not Implemented (TODO:)
-	RPL_WHOISSERVER     = "312" // RFC1459 - Not Implemented (TODO:)
+	RPL_WHOISUSER       = "311" // RFC1459 - Implemented
+	RPL_WHOISSERVER     = "312" // RFC1459 - Implemented
 	RPL_WHOISOPERATOR   = "313" // RFC1459 - Not Implemented (TODO:)
 	RPL_WHOWASUSER      = "314" // RFC1459 - Not Implemented (TODO:)
 	RPL_ENDOFWHO        = "315" // RFC1459 - Not Implemented (TODO:)
-	RPL_WHOISIDLE       = "317" // RFC1459 - Not Implemented (TODO:)
-	RPL_ENDOFWHOIS      = "318" // RFC1459 - Not Implemented (TODO:)
-	RPL_WHOISCHANNELS   = "319" // RFC1459 - Not Implemented (TODO:)
+	RPL_WHOISIDLE       = "317" // RFC1459 - Implemented
+	RPL_ENDOFWHOIS      = "318" // RFC1459 - Implemented
+	RPL_WHOISCHANNELS   = "319" // RFC1459 - Implemented
 	RPL_LISTSTART       = "321" // RFC1459 - Not Implemented - Deprecated (TODO:)
 	RPL_LIST            = "322" // RFC1459 - Not Implemented (TODO:)
 	RPL_LISTEND         = "323" // RFC1459 - Not Implemented (TODO:)
@@ -220,6 +214,8 @@ const (
 	RPL_ENDOFINFO       = "374" // RFC1459 - Not Implemented (TODO:)
 	RPL_MOTDSTART       = "375" // RFC1459 - Implemented
 	RPL_ENDOFMOTD       = "376" // RFC1459 - Not Implemented (TODO:)
+	RPL_WHOISHOST       = "378" // ??????? - Implemented - Has Conflicts
+	RPL_WHOISMODES      = "379" // ??????? - Implemented - Has Conflicts
 	RPL_YOUREOPER       = "381" // RFC1459 - Not Implemented (TODO:)
 	RPL_REHASHING       = "382" // RFC1459 - Not Implemented (TODO:)
 	RPL_YOURSERVICE     = "383" // RFC2812 - Not Implemented (TODO:)
@@ -232,7 +228,7 @@ const (
 
 	ERR_UNKNOWNERROR      = "400" // ??????? - Not Implemented (TODO:)
 	ERR_NOSUCHNICK        = "401" // RFC1459 - Not Implemented (TODO:)
-	ERR_NOSUCHSERVER      = "402" // RFC1459 - Not Implemented (TODO:)
+	ERR_NOSUCHSERVER      = "402" // RFC1459 - Implemented
 	ERR_NOSUCHCHANNEL     = "403" // RFC1459 - Not Implemented (TODO:)
 	ERR_CANNOTSENDTOCHAN  = "404" // RFC1459 - Not Implemented (TODO:)
 	ERR_TOOMANYCHANNELS   = "405" // RFC1459 - Not Implemented (TODO:)
@@ -248,7 +244,7 @@ const (
 	ERR_NOMOTD            = "422" // RFC1459 - Not Implemented (TODO:)
 	ERR_NOADMININFO       = "423" // RFC1459 - Not Implemented (TODO:)
 	ERR_FILEERROR         = "424" // RFC1459 - Not Implemented (TODO:)
-	ERR_NONICKNAMEGIVEN   = "431" // RFC1459 - Not Implemented (TODO:)
+	ERR_NONICKNAMEGIVEN   = "431" // RFC1459 - Implemented
 	ERR_ERRONEUSNICKNAME  = "432" // RFC1459 - Not Implemented (TODO:)
 	ERR_NICKNAMEINUSE     = "433" // RFC1459 - Not Implemented (TODO:)
 	ERR_NICKCOLLISION     = "436" // RFC1459 - Not Implemented (TODO:)
@@ -260,8 +256,8 @@ const (
 	ERR_SUMMONDISABLED    = "445" // RFC1459 - Not Implemented (TODO:)
 	ERR_USERSDISABLED     = "446" // RFC1459 - Not Implemented (TODO:)
 	ERR_NOTREGISTERED     = "451" // RFC1459 - Not Implemented (TODO:)
-	ERR_NEEDMOREPARAMS    = "461" // RFC1459 - Not Implemented (TODO:)
-	ERR_ALREADYREGISTERED = "462" // RFC1459 - Not Implemented (TODO:)
+	ERR_NEEDMOREPARAMS    = "461" // RFC1459 - Implemented
+	ERR_ALREADYREGISTERED = "462" // RFC1459 - Implemented
 	ERR_NOPERMFORHOST     = "463" // RFC1459 - Not Implemented (TODO:)
 	ERR_PASSWDMISMATCH    = "464" // RFC1459 - Not Implemented (TODO:)
 	ERR_YOUREBANNEDCREEP  = "465" // RFC1459 - Not Implemented (TODO:)
