@@ -69,7 +69,6 @@ var (
 			Padding(0, 2).
 			Align(lipgloss.Center).
 			Render("Connect")
-
 	FocusedCheckbox = lipgloss.NewStyle().
 			Foreground(ui.AccentColor).
 			MarginTop(1).
@@ -101,5 +100,4 @@ var (
 			Foreground(ui.AccentColor)
 	FocusedStyle = lipgloss.NewStyle().
 			Foreground(ui.AccentColor)
-	NoStyle = lipgloss.NewStyle()
 )

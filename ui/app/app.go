@@ -92,11 +92,9 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		s.UI.CurrentScreen = MainScreen
 
-		// create new client with the provided host and port
 		s.Client.Initialize(host, port, tlsEnabled)
 		s.Client.Register(nickname, password, channel)
-
-		s.Client.LastTabIndexInTabBar = len(s.Client.Channels) - 1
+		s.Client.SetDay()
 
 		go handler.ReadLoop(s.Client)
 

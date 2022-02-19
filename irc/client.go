@@ -22,8 +22,12 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/illusionman1212/gorc/irc/commands"
+	"github.com/illusionman1212/gorc/ui"
 )
 
 type User struct {
@@ -80,7 +84,43 @@ type Client struct {
 	LastTabIndexInTabBar int
 }
 
+type MsgFmtOpts struct {
+	WithTimestamp bool
+	AsServerMsg   bool
+	NotImpl       bool
+	AsDate        bool
+}
+
+var notImpl = lipgloss.NewStyle().Foreground(ui.ErrorColor).Render("[NOT IMPL]")
+var serverMsgStyle = lipgloss.NewStyle().Foreground(ui.ServerMsgColor)
+var timestampStyle = serverMsgStyle.Copy()
+var dateStyle = lipgloss.NewStyle().Foreground(ui.DateColor)
+
 const CRLF = "\r\n"
+
+func (c *Channel) AppendMsg(timestamp string, fullMsg string, opts MsgFmtOpts) {
+	prefixes := ""
+	style := ui.DefaultStyle
+
+	if opts.WithTimestamp {
+		prefixes += timestampStyle.Render(timestamp) + " "
+	}
+
+	if opts.NotImpl {
+		prefixes += notImpl + " "
+	}
+
+	if opts.AsServerMsg {
+		prefixes += serverMsgStyle.Render("==") + " "
+		style = serverMsgStyle
+	}
+
+	if opts.AsDate {
+		style = dateStyle
+	}
+
+	c.History += prefixes + style.Render(fullMsg) + CRLF
+}
 
 func (s *Client) Initialize(host string, port string, tlsEnabled bool) {
 	addr := fmt.Sprintf("%s:%s", host, port)
@@ -124,20 +164,33 @@ func (c *Client) Register(nick string, password string, channel string) {
 		Users: make(map[string]User),
 	})
 
-	c.SendCommand("CAP", "LS")
+	c.SendCommand(commands.CAP, "LS")
 	if password != "" {
-		c.SendCommand("PASS", password)
+		c.SendCommand(commands.PASS, password)
 	}
 	// TODO: check if nickname has spaces and remove them
-	c.SendCommand("NICK", nick)
+	c.SendCommand(commands.NICK, nick)
+	// set user-wanted nickname
 	c.Nickname = nick
-	c.SendCommand("USER", nick, "0", "*", nick)
+	c.SendCommand(commands.USER, nick, "0", "*", nick)
 	// TODO: CAP REQ :whatever capability the client recognizes and supports
-	c.SendCommand("CAP", "END")
+	c.SendCommand(commands.CAP, "END")
 	// joining a channel when registering is optional
 	if channel != "" {
-		c.SendCommand("JOIN", channel)
+		c.SendCommand(commands.JOIN, channel)
 	}
+}
+
+func (c *Client) SetDay() {
+	msgOpts := MsgFmtOpts{
+		AsDate: true,
+	}
+
+	now := time.Now()
+	msg := fmt.Sprintf("————— %s %d —————", now.Month().String(), now.Day())
+	c.Channels[0].AppendMsg("", msg, msgOpts)
+
+	// TODO: append new day to each channel whenever the day changes
 }
 
 func (c Client) SendCommand(cmd string, params ...string) {

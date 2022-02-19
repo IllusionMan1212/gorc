@@ -17,6 +17,9 @@
 package cmds
 
 import (
+	"fmt"
+	"time"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/illusionman1212/gorc/irc"
 )
@@ -38,12 +41,19 @@ func Quit(client *irc.Client) tea.Cmd {
 }
 
 type SendPrivMsgMsg struct {
-	Msg string
+	Msg       string
+	Timestamp string
 }
 
 func SendPrivMsg(msg string) tea.Cmd {
 	return func() tea.Msg {
-		return SendPrivMsgMsg{Msg: msg}
+		now := time.Now()
+		timestamp := fmt.Sprintf("[%02d:%02d]", now.Hour(), now.Minute())
+
+		return SendPrivMsgMsg{
+			Msg:       msg,
+			Timestamp: timestamp,
+		}
 	}
 }
 

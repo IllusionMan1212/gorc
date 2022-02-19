@@ -23,6 +23,9 @@ var (
 			Width(0).
 			Height(0)
 
+	DefaultStyle = lipgloss.NewStyle().
+			Foreground(PrimaryColor)
+
 	AccentColor = lipgloss.AdaptiveColor{
 		Dark:  "#1C6DD0",
 		Light: "#1C6DD0",
@@ -43,5 +46,13 @@ var (
 		Light: "#CCC",
 	}
 
-	Red = lipgloss.Color("#F00")
+	ErrorColor = lipgloss.Color("#F00")
+	DateColor  = lipgloss.AdaptiveColor{
+		Dark:  "#0F0",
+		Light: "#090",
+	}
+	ServerMsgColor = lipgloss.AdaptiveColor{
+		Dark:  "#999",
+		Light: "#777",
+	}
 )

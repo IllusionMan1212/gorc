@@ -22,16 +22,16 @@ import (
 )
 
 var (
-	InputboxStyle = lipgloss.NewStyle().
+	InputboxStyle = ui.DefaultStyle.Copy().
 			Border(lipgloss.NormalBorder(), true).
 			Padding(0, 1).
 			Width(ui.MainStyle.GetWidth()).
 			BorderForeground(ui.AccentColor)
-	MessagesStyle = lipgloss.NewStyle().
+	MessagesStyle = ui.DefaultStyle.Copy().
 			Border(lipgloss.NormalBorder(), false, true, true, true).
 			Width(ui.MainStyle.GetWidth() * 8 / 10).
 			BorderForeground(ui.PrimaryColor)
-	SidePanelStyle = lipgloss.NewStyle().
+	SidePanelStyle = ui.DefaultStyle.Copy().
 			Border(lipgloss.NormalBorder(), true).
 			Width(ui.MainStyle.GetWidth() * 2 / 10).
 			BorderForeground(ui.PrimaryColor)

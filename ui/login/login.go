@@ -123,8 +123,8 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 				}
 
 				s.Inputs[i].Blur()
-				s.Inputs[i].PromptStyle = NoStyle
-				s.Inputs[i].TextStyle = NoStyle
+				s.Inputs[i].PromptStyle = ui.DefaultStyle
+				s.Inputs[i].TextStyle = ui.DefaultStyle
 			}
 
 			return s, tea.Batch(cmds...)

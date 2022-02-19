@@ -44,6 +44,6 @@ func main() {
 	err = p.Start()
 
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 }

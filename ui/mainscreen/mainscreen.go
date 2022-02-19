@@ -90,7 +90,11 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		} else {
 			if s.Client.ActiveChannel != s.Client.Host {
 				fullMsg := s.Client.Nickname + ": " + msg.Msg
-				s.Client.Channels[s.Client.ActiveChannelIndex].History += fullMsg + irc.CRLF
+				msgOpts := irc.MsgFmtOpts{
+					WithTimestamp: true,
+				}
+
+				s.Client.Channels[s.Client.ActiveChannelIndex].AppendMsg(msg.Timestamp, fullMsg, msgOpts)
 				// TODO: make sure to only append the message to the history if server sends back no errors
 				s.Client.SendCommand(commands.PRIVMSG, s.Client.ActiveChannel, msg.Msg)
 				s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannelIndex].History)

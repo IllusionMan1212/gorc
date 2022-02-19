@@ -23,15 +23,11 @@ import (
 	"log"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/illusionman1212/gorc/cmds"
 	"github.com/illusionman1212/gorc/irc"
 	"github.com/illusionman1212/gorc/irc/commands"
 	"github.com/illusionman1212/gorc/irc/parser"
-	"github.com/illusionman1212/gorc/ui"
 )
-
-var notImpl = lipgloss.NewStyle().Foreground(ui.Red).Render("[NOT IMPL]")
 
 func ReadLoop(client *irc.Client) {
 	// 512 bytes as a base + 8192 additional bytes for tags
@@ -65,9 +61,13 @@ func handlePrivMsg(msg parser.IRCMessage, client *irc.Client) {
 	msgContent := msg.Parameters[1]
 	privMsg := fmt.Sprintf("%s: %s", nick, msgContent)
 
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+	}
+
 	for i, c := range client.Channels {
 		if c.Name == channel {
-			client.Channels[i].History += privMsg + irc.CRLF
+			client.Channels[i].AppendMsg(msg.Timestamp, privMsg, msgOpts)
 		}
 	}
 }
@@ -76,7 +76,12 @@ func handleJoin(msg parser.IRCMessage, client *irc.Client) {
 	nick := strings.SplitN(msg.Source, "!", 2)[0]
 	channel := msg.Parameters[0]
 
-	joinMsg := fmt.Sprintf("== %s has joined", nick)
+	joinMsg := fmt.Sprintf("%s has joined", nick)
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
 
 	if nick == client.Nickname {
 		client.Channels = append(client.Channels, irc.Channel{
@@ -85,7 +90,7 @@ func handleJoin(msg parser.IRCMessage, client *irc.Client) {
 		})
 		client.ActiveChannelIndex = len(client.Channels) - 1
 		client.ActiveChannel = channel
-		client.Channels[client.ActiveChannelIndex].History += joinMsg + irc.CRLF
+		client.Channels[client.ActiveChannelIndex].AppendMsg(msg.Timestamp, joinMsg, msgOpts)
 		if _, exists := client.Channels[client.ActiveChannelIndex].Users[nick]; !exists {
 			client.Channels[client.ActiveChannelIndex].Users[nick] = irc.User{}
 		}
@@ -93,7 +98,7 @@ func handleJoin(msg parser.IRCMessage, client *irc.Client) {
 	} else {
 		for i, c := range client.Channels {
 			if c.Name == channel {
-				client.Channels[i].History += joinMsg + irc.CRLF
+				client.Channels[i].AppendMsg(msg.Timestamp, joinMsg, msgOpts)
 				if _, exists := client.Channels[i].Users[nick]; !exists {
 					client.Channels[i].Users[nick] = irc.User{}
 				}
@@ -109,14 +114,19 @@ func handleJoin(msg parser.IRCMessage, client *irc.Client) {
 func handleQuit(msg parser.IRCMessage, client *irc.Client) {
 	nick := strings.SplitN(msg.Source, "!", 2)[0]
 	reason := msg.Parameters[0]
-	quitMsg := fmt.Sprintf("== %s has quit (%s)", nick, reason)
+	quitMsg := fmt.Sprintf("%s has quit (%s)", nick, reason)
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
 
 	for i := range client.Channels {
 		// skip the server "channel"
 		if i == 0 {
 			continue
 		}
-		client.Channels[i].History += quitMsg + irc.CRLF
+		client.Channels[i].AppendMsg(msg.Timestamp, quitMsg, msgOpts)
 		delete(client.Channels[i].Users, nick)
 	}
 
@@ -131,7 +141,12 @@ func handlePart(msg parser.IRCMessage, client *irc.Client) {
 		reason = msg.Parameters[1]
 	}
 
-	partMsg := fmt.Sprintf("== %s has left %s (%s)", nick, channel, reason)
+	partMsg := fmt.Sprintf("%s has left %s (%s)", nick, channel, reason)
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
 
 	for i, c := range client.Channels {
 		if c.Name == channel {
@@ -143,7 +158,7 @@ func handlePart(msg parser.IRCMessage, client *irc.Client) {
 				}
 				client.LastTabIndexInTabBar--
 			} else {
-				client.Channels[i].History += partMsg + irc.CRLF
+				client.Channels[i].AppendMsg(msg.Timestamp, partMsg, msgOpts)
 				delete(client.Channels[i].Users, nick)
 			}
 		}
@@ -153,69 +168,127 @@ func handlePart(msg parser.IRCMessage, client *irc.Client) {
 }
 
 func handleWELCOME(msg parser.IRCMessage, client *irc.Client) {
+	nick := msg.Parameters[0]
 	welcomeMsg := msg.Parameters[1]
 
-	client.Channels[0].History += welcomeMsg + irc.CRLF
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	// set server-registered nickname
+	client.Nickname = nick
+	client.Channels[0].AppendMsg(msg.Timestamp, welcomeMsg, msgOpts)
 }
 
 func handleYOURHOST(msg parser.IRCMessage, client *irc.Client) {
 	host := msg.Parameters[1]
 
-	client.Channels[0].History += host + irc.CRLF
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, host, msgOpts)
 }
 
 func handleCREATED(msg parser.IRCMessage, client *irc.Client) {
 	created := msg.Parameters[1]
 
-	client.Channels[0].History += created + irc.CRLF
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, created, msgOpts)
 }
 
 func handleMYINFO(msg parser.IRCMessage, client *irc.Client) {
 	info := strings.Join(msg.Parameters[1:], " ")
 
-	client.Channels[0].History += info + irc.CRLF
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, info, msgOpts)
 }
 
 func handleLUSERCLIENT(msg parser.IRCMessage, client *irc.Client) {
 	message := msg.Parameters[1]
 
-	client.Channels[0].History += message + irc.CRLF
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
 func handleLUSEROP(msg parser.IRCMessage, client *irc.Client) {
 	message := strings.Join(msg.Parameters[1:], " ")
 
-	client.Channels[0].History += message + irc.CRLF
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
 func handleLUSERUNKNOWN(msg parser.IRCMessage, client *irc.Client) {
 	message := strings.Join(msg.Parameters[1:], " ")
 
-	client.Channels[0].History += message + irc.CRLF
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
 func handleLUSERCHANNELS(msg parser.IRCMessage, client *irc.Client) {
 	message := strings.Join(msg.Parameters[1:], " ")
 
-	client.Channels[0].History += message + irc.CRLF
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
 func handleLUSERME(msg parser.IRCMessage, client *irc.Client) {
 	message := msg.Parameters[1]
 
-	client.Channels[0].History += message + irc.CRLF
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
 func handleLOCALUSERS(msg parser.IRCMessage, client *irc.Client) {
 	message := msg.Parameters[1]
 
-	client.Channels[0].History += message + irc.CRLF
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
 func handleGLOBALUSERS(msg parser.IRCMessage, client *irc.Client) {
 	message := msg.Parameters[1]
 
-	client.Channels[0].History += message + irc.CRLF
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
 func handleNAMREPLY(msg parser.IRCMessage, client *irc.Client) {
@@ -249,15 +322,25 @@ func handleNAMREPLY(msg parser.IRCMessage, client *irc.Client) {
 }
 
 func handleMOTDStart(msg parser.IRCMessage, client *irc.Client) {
-	params := strings.Join(msg.Parameters[1:], " ")
+	message := strings.Join(msg.Parameters[1:], " ")
 
-	client.Channels[0].History += params + irc.CRLF
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
 func handleMOTD(msg parser.IRCMessage, client *irc.Client) {
 	messageLine := msg.Parameters[1]
 
-	client.Channels[0].History += messageLine + irc.CRLF
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, messageLine, msgOpts)
 }
 
 func HandleCommand(msg parser.IRCMessage, client *irc.Client) {
@@ -315,15 +398,19 @@ func HandleCommand(msg parser.IRCMessage, client *irc.Client) {
 		// and log an error if timeout ends without receiving this command.
 	default:
 		fullMsg := fmt.Sprintf(
-			"%s %s %s %s %s",
-			notImpl,
+			"%s %s %s %s",
 			msg.Tags,
 			msg.Source,
 			msg.Command,
 			strings.Join(msg.Parameters, " "),
 		)
 
-		client.Channels[0].History += fullMsg + irc.CRLF
+		msgOpts := irc.MsgFmtOpts{
+			WithTimestamp: true,
+			NotImpl:       true,
+		}
+
+		client.Channels[0].AppendMsg(msg.Timestamp, fullMsg, msgOpts)
 	}
 
 	// send a receivedIRCmsg tea message so the ui can update

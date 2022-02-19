@@ -17,12 +17,14 @@
 package parser
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type IRCMessage struct {
-	// TODO: prefix: that will hold the timestamp AND the server message prefix (==)
+	Timestamp  string
 	Tags       Tags     // starts with @ | Optional
 	Source     string   // starts with : | Optional
 	Command    string   // can either be a string or a numeric value | Required
@@ -30,6 +32,12 @@ type IRCMessage struct {
 }
 
 type Tags map[string]string
+
+func (m *IRCMessage) setTimestamp() {
+	// TODO: get timestamp from time tag
+	now := time.Now()
+	m.Timestamp = fmt.Sprintf("[%02d:%02d]", now.Hour(), now.Minute())
+}
 
 func parseTags(rawTags string) Tags {
 	tags := make(Tags, 0)
@@ -107,6 +115,8 @@ func ParseIRCMessage(line string) (IRCMessage, bool) {
 
 		ircMessage.Parameters = finalParams
 	}
+
+	ircMessage.setTimestamp()
 
 	return ircMessage, true
 }
