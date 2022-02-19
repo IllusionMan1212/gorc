@@ -23,11 +23,15 @@ import (
 	"log"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/illusionman1212/gorc/cmds"
 	"github.com/illusionman1212/gorc/irc"
 	"github.com/illusionman1212/gorc/irc/commands"
 	"github.com/illusionman1212/gorc/irc/parser"
+	"github.com/illusionman1212/gorc/ui"
 )
+
+var notImpl = lipgloss.NewStyle().Foreground(ui.Red).Render("[NOT IMPL]")
 
 func ReadLoop(client *irc.Client) {
 	// 512 bytes as a base + 8192 additional bytes for tags
@@ -310,7 +314,14 @@ func HandleCommand(msg parser.IRCMessage, client *irc.Client) {
 		// start a timeout and update said timeout on every RPL_MOTD
 		// and log an error if timeout ends without receiving this command.
 	default:
-		fullMsg := fmt.Sprintf("%s %s %s %s", msg.Tags, msg.Source, msg.Command, strings.Join(msg.Parameters, " "))
+		fullMsg := fmt.Sprintf(
+			"%s %s %s %s %s",
+			notImpl,
+			msg.Tags,
+			msg.Source,
+			msg.Command,
+			strings.Join(msg.Parameters, " "),
+		)
 
 		client.Channels[0].History += fullMsg + irc.CRLF
 	}

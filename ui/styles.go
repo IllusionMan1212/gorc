@@ -42,4 +42,6 @@ var (
 		Dark:  "#666",
 		Light: "#CCC",
 	}
+
+	Red = lipgloss.Color("#F00")
 )
