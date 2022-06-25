@@ -35,7 +35,7 @@ func handleSlashJoin(params []string, client *irc.Client) tea.Cmd {
 		if c.Name == channel {
 			client.ActiveChannelIndex = i
 			client.ActiveChannel = channel
-			break
+			return cmds.SwitchChannels
 		}
 	}
 	client.SendCommand(commands.JOIN, params...)
