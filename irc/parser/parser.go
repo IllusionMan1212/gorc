@@ -36,7 +36,7 @@ type Tags map[string]string
 func (m *IRCMessage) setTimestamp() {
 	// TODO: get timestamp from time tag
 	now := time.Now()
-	m.Timestamp = fmt.Sprintf("[%02d:%02d]", now.Hour(), now.Minute())
+	m.Timestamp = fmt.Sprintf("[%02d:%02d:%02d.%03d]", now.Hour(), now.Minute(), now.Second(), now.Nanosecond()/1000000)
 }
 
 func parseTags(rawTags string) Tags {

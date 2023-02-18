@@ -17,6 +17,7 @@
 package handler
 
 import (
+	"log"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -24,24 +25,6 @@ import (
 	"github.com/illusionman1212/gorc/irc"
 	"github.com/illusionman1212/gorc/irc/commands"
 )
-
-func handleSlashJoin(params []string, client *irc.Client) tea.Cmd {
-	channel := ""
-	if len(params) > 0 {
-		channel = params[0]
-	}
-
-	for i, c := range client.Channels {
-		if c.Name == channel {
-			client.ActiveChannelIndex = i
-			client.ActiveChannel = channel
-			return cmds.SwitchChannels
-		}
-	}
-	client.SendCommand(commands.JOIN, params...)
-
-	return cmds.SwitchChannels
-}
 
 func HandleSlashCommand(msg string, client *irc.Client) tea.Cmd {
 	substrs := strings.Fields(msg[1:])
@@ -53,10 +36,14 @@ func HandleSlashCommand(msg string, client *irc.Client) tea.Cmd {
 
 	switch command {
 	case commands.JOIN:
-		return handleSlashJoin(params, client)
+		client.SendCommand(commands.JOIN, params...)
+		return cmds.SwitchChannels
 	case commands.QUIT:
 		client.SendCommand(command, params...)
 		return cmds.Quit(client)
+	case "TEST":
+		log.Println("running the spammer")
+		return cmds.Tick(client)
 	default:
 		client.SendCommand(command, params...)
 		return nil

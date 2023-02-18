@@ -59,6 +59,7 @@ func NewMainScreen(client *irc.Client) State {
 	newViewport := viewport.New(0, 0)
 	newViewport.Wrap = viewport.Wrap
 	newViewport.Style = MessagesStyle.Copy()
+	newViewport.MouseWheelEnabled = false
 
 	return State{
 		Client:                client,
@@ -77,9 +78,25 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 	switch msg := msg.(type) {
 	case cmds.ReceivedIRCMsgMsg:
 		wasAtBottom := s.Viewport.AtBottom()
-		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannelIndex].History)
+		s.Viewport.SetContent(strings.Join(s.Client.Channels[s.Client.ActiveChannelIndex].ScrollBackBuf, "\n"))
 
 		if wasAtBottom {
+			s.Client.Channels[s.Client.ActiveChannelIndex].AtBottom = true
+			s.Viewport.GotoBottom()
+		} else {
+			s.Client.Channels[s.Client.ActiveChannelIndex].AtBottom = false
+		}
+		return s, nil
+	case cmds.ReadHistoryFromDBMsg:
+		s.Viewport.SetContent(strings.Join(s.Client.Channels[s.Client.ActiveChannelIndex].ScrollBackBuf, "\n"))
+		switch msg.Direction {
+		case "top":
+			s.Viewport.GotoTop()
+		case "up":
+			s.Viewport.SetYOffset(s.Viewport.YOffset + int(msg.LinesRead))
+		case "down":
+			s.Viewport.SetYOffset(s.Viewport.YOffset - int(msg.LinesRead))
+		case "bottom":
 			s.Viewport.GotoBottom()
 		}
 		return s, nil
@@ -94,17 +111,17 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 					WithTimestamp: true,
 				}
 
-				s.Client.Channels[s.Client.ActiveChannelIndex].AppendMsg(msg.Timestamp, fullMsg, msgOpts)
+				s.Client.Channels[s.Client.ActiveChannelIndex].AppendMsg(s.Client.Host, s.Client.DB, msg.Timestamp, fullMsg, msgOpts)
 				// TODO: make sure to only append the message to the history if server sends back no errors
 				s.Client.SendCommand(commands.PRIVMSG, s.Client.ActiveChannel, msg.Msg)
-				s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannelIndex].History)
+				s.Viewport.SetContent(strings.Join(s.Client.Channels[s.Client.ActiveChannelIndex].ScrollBackBuf, "\n"))
 				s.Viewport.GotoBottom()
 			}
 		}
 
 		return s, nil
 	case cmds.SwitchChannelsMsg:
-		s.Viewport.SetContent(s.Client.Channels[s.Client.ActiveChannelIndex].History)
+		s.Viewport.SetContent(strings.Join(s.Client.Channels[s.Client.ActiveChannelIndex].ScrollBackBuf, "\n"))
 		s.Viewport.GotoBottom()
 
 		*s.SidePanel, cmd = s.SidePanel.Update(msg)
@@ -113,6 +130,9 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		s.Client.LastTabIndexInTabBar = len(s.Client.Channels) - 1
 		s.TabRenderingDirection = Left
 		return s, nil
+	case cmds.TickMsg:
+		s.Client.Ticks++
+		return s, cmds.Tick(s.Client)
 	case tea.KeyMsg:
 		key := msg.String()
 		switch key {
@@ -180,11 +200,37 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 			return s, cmds.SwitchChannels
 		case "g":
 			if s.FocusIndex == Viewport {
-				s.Viewport.GotoTop()
+				s.Client.Channels[s.Client.ActiveChannelIndex].AtBottom = false
+				if !s.Viewport.AtTop() {
+					cmdsToProcess = append(cmdsToProcess, cmds.ReadHistoryFromDB(s.Client, irc.SCROLLBACK_MAX, "top"))
+				}
 			}
 		case "G":
 			if s.FocusIndex == Viewport {
-				s.Viewport.GotoBottom()
+				if !s.Viewport.AtBottom() {
+					cmdsToProcess = append(cmdsToProcess, cmds.ReadHistoryFromDB(s.Client, irc.SCROLLBACK_MAX, "bottom"))
+				}
+				s.Client.Channels[s.Client.ActiveChannelIndex].AtBottom = true
+			}
+		case "j", "k", "d", "u", "f", "b", "up", "down":
+			// TODO: what???
+			// if s.Viewport.AtBottom() {
+			// 	break
+			// }
+
+			if key == "j" || key == "d" || key == "f" || key == "down" {
+				if s.Viewport.ScrollPercent() > 0.5 {
+					excess := s.Viewport.ScrollPercent() - 0.5 + 0.1
+					linesToRead := int(math.Floor(excess * float64(irc.SCROLLBACK_MAX)))
+					cmdsToProcess = append(cmdsToProcess, cmds.ReadHistoryFromDB(s.Client, linesToRead, "down"))
+				}
+			} else {
+				s.Client.Channels[s.Client.ActiveChannelIndex].AtBottom = false
+				if s.Viewport.ScrollPercent() < 0.5 && s.Viewport.ScrollPercent() > 0.0 {
+					excess := 0.5 - s.Viewport.ScrollPercent() + 0.1
+					linesToRead := int(math.Floor(excess * float64(irc.SCROLLBACK_MAX)))
+					cmdsToProcess = append(cmdsToProcess, cmds.ReadHistoryFromDB(s.Client, linesToRead, "up"))
+				}
 			}
 		}
 	}
@@ -244,7 +290,7 @@ func (s *State) SetSize(width, height int) {
 	// we need this to render an empty viewport
 	history := ""
 	if len(s.Client.Channels) != 0 {
-		history = s.Client.Channels[s.Client.ActiveChannelIndex].History
+		history = strings.Join(s.Client.Channels[s.Client.ActiveChannelIndex].ScrollBackBuf, "\n")
 	}
 
 	// we need to re-set the content because words wrap differently on different sizes

@@ -20,6 +20,7 @@ import (
 	"log"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/illusionman1212/gorc/db"
 	"github.com/illusionman1212/gorc/ui/app"
 )
 
@@ -32,7 +33,13 @@ func main() {
 		tea.WithMouseCellMotion(),
 	)
 
+	db, err := db.ConnectToDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	gorc.Client.Tea = p
+	gorc.Client.DB = db
 
 	f, err := tea.LogToFile("gorc.log", "gorc")
 	defer f.Close()

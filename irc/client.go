@@ -26,8 +26,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/illusionman1212/gorc/db"
 	"github.com/illusionman1212/gorc/irc/commands"
 	"github.com/illusionman1212/gorc/ui"
+	"gorm.io/gorm"
 )
 
 type User struct {
@@ -42,8 +44,26 @@ type Channel struct {
 	// Channel topic
 	Topic string
 
-	// Channel messages history
-	History string
+	// Scrollback buffer for the channel message history
+	ScrollBackBuf []string
+
+	// Whethere the viewport is at the bottom or not
+	AtBottom bool
+
+	// Total amount of lines that have been received from the tcp conn
+	// and written to the history db
+	TotalLines uint64
+
+	// Buffer of messages that need to be inserted into the db
+	ToInsert []db.History
+
+	// Position/Index of first line in the scrollback buffer as mapped
+	// to TotalLines.
+	// Last line is ScrollBackBufFirstLine + SCROLLBACK_MAX - 1
+	ScrollBackBufFirstLine uint64
+
+	// Unique sha1 hash for the channel made from server hostname and channel name
+	Hash string
 
 	// Users in this channel
 	// The map key is the user's nickname
@@ -77,6 +97,12 @@ type Client struct {
 	// Reference to the bubbletea program
 	Tea *tea.Program
 
+	// TODO: remove this
+	Ticks int
+
+	// DB reference
+	DB *gorm.DB
+
 	// Index of the first visible tab in the tab bar
 	FirstTabIndexInTabBar int
 
@@ -96,9 +122,12 @@ var serverMsgStyle = lipgloss.NewStyle().Foreground(ui.ServerMsgColor)
 var timestampStyle = serverMsgStyle.Copy()
 var dateStyle = lipgloss.NewStyle().Foreground(ui.DateColor)
 
-const CRLF = "\r\n"
+const (
+	CRLF           = "\r\n"
+	SCROLLBACK_MAX = 400
+)
 
-func (c *Channel) AppendMsg(timestamp string, fullMsg string, opts MsgFmtOpts) {
+func (c *Channel) AppendMsg(host string, database *gorm.DB, timestamp string, fullMsg string, opts MsgFmtOpts) {
 	prefixes := ""
 	style := ui.DefaultStyle
 
@@ -119,7 +148,32 @@ func (c *Channel) AppendMsg(timestamp string, fullMsg string, opts MsgFmtOpts) {
 		style = dateStyle
 	}
 
-	c.History += prefixes + style.Render(fullMsg) + CRLF
+	finalMsg := prefixes + style.Render(fullMsg)
+
+	c.TotalLines++
+
+	history := db.History{Hash: c.Hash, Line: c.TotalLines, Message: finalMsg}
+	c.ToInsert = append(c.ToInsert, history)
+
+	if c.TotalLines%10 == 0 {
+		database.Create(c.ToInsert)
+		c.ToInsert = nil
+	}
+
+	if len(c.ScrollBackBuf) < SCROLLBACK_MAX {
+		c.ScrollBackBuf = append(c.ScrollBackBuf, prefixes+style.Render(fullMsg))
+		// We haven't reached the bottom yet so the first line is still 1
+		c.ScrollBackBufFirstLine = 1
+	} else if c.AtBottom && len(c.ScrollBackBuf) >= SCROLLBACK_MAX {
+		// TODO: when pressing 'g' in viewport, we need to set this to 1
+		// TODO: when pressing 'G' in viewport, we need to set this to TotalLines - 1000 + 1
+		// TODO: when going up in viewport, we need to decrement the amount of lines by how many lines we need to prepend to the scrollbackbuf
+		// TODO: when going down in viewport, we need to increment the amount of lines by how many lines we need to append to the scrollbackbuf
+		// If we're at bottom and we're appending a line, then we increment the first line
+		c.ScrollBackBufFirstLine++
+		c.ScrollBackBuf = append(c.ScrollBackBuf, prefixes+style.Render(fullMsg))
+		c.ScrollBackBuf = c.ScrollBackBuf[1:]
+	}
 }
 
 func (s *Client) Initialize(host string, port string, tlsEnabled bool) {
@@ -138,6 +192,7 @@ func (s *Client) Initialize(host string, port string, tlsEnabled bool) {
 		s.Port = port
 		s.ActiveChannel = host
 		s.Channels = make([]Channel, 0)
+		s.Ticks = 1
 		return
 	}
 
@@ -156,6 +211,7 @@ func (s *Client) Initialize(host string, port string, tlsEnabled bool) {
 	s.Port = port
 	s.ActiveChannel = host
 	s.Channels = make([]Channel, 0)
+	s.Ticks = 1
 }
 
 func (c *Client) Register(nick string, password string, channel string) {
@@ -188,7 +244,7 @@ func (c *Client) SetDay() {
 
 	now := time.Now()
 	msg := fmt.Sprintf("————— %s %d —————", now.Month().String(), now.Day())
-	c.Channels[0].AppendMsg("", msg, msgOpts)
+	c.Channels[0].AppendMsg(c.Host, c.DB, "", msg, msgOpts)
 
 	// TODO: append new day to each channel whenever the day changes
 }
