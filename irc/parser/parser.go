@@ -39,6 +39,33 @@ func (m *IRCMessage) setTimestamp() {
 	m.Timestamp = fmt.Sprintf("[%02d:%02d]", now.Hour(), now.Minute())
 }
 
+func escapeCharacters(char rune) string {
+	switch char {
+	case 's':
+		return " "
+	case 'n':
+		return "\n"
+	case 'r':
+		return "\r"
+	case 'b':
+		return "\b"
+	case 't':
+		return "\t"
+	case 'f':
+		return "\f"
+	case ':':
+		return ";"
+	case '\\':
+		fallthrough
+	case '\'':
+		fallthrough
+	case '"':
+		fallthrough
+	default:
+		return string(char)
+	}
+}
+
 func parseTags(rawTags string) Tags {
 	tags := make(Tags, 0)
 	rawTagsSlice := strings.Split(rawTags, ";")
@@ -51,7 +78,24 @@ func parseTags(rawTags string) Tags {
 
 		// we need to make sure a "value" exists before accessing str[1]
 		if len(str) > 1 {
-			value = str[1]
+			rawValue := str[1]
+			for idx := 0; idx < len(rawValue); {
+				// if we have a backslash at the end of the string
+				// we need to ignore it
+				if idx == len(rawValue)-1 && rawValue[idx] == '\\' {
+					idx += 2
+					continue
+				}
+
+				if rawValue[idx] == '\\' {
+					value += escapeCharacters(rune(rawValue[idx+1]))
+					idx += 2
+					continue
+				}
+
+				value += string(rawValue[idx])
+				idx++
+			}
 		}
 
 		tags[key] = value

@@ -341,7 +341,6 @@ func TestParser(t *testing.T) {
 		}
 	})
 
-	// TODO: fails
 	t.Run("Test escaped tags", func(t *testing.T) {
 		testMessage := "@a=b\\\\and\\nk;c=72\\s45;d=gh\\:764 foo"
 		ircMessage, valid := ParseIRCMessage(testMessage)
@@ -401,7 +400,6 @@ func TestParser(t *testing.T) {
 		}
 	})
 
-	// TODO: FAIL
 	t.Run("Test single param with preceeding :", func(t *testing.T) {
 		testMessage := ":src JOIN :#chan"
 		ircMessage, valid := ParseIRCMessage(testMessage)
@@ -652,7 +650,6 @@ func TestParser(t *testing.T) {
 		}
 	})
 
-	// TODO: FAIL
 	t.Run("Test yaml encoding with slashes", func(t *testing.T) {
 		testMessage := "@foo=\\\\\\\\\\:\\\\s\\s\\r\\n COMMAND"
 		ircMessage, valid := ParseIRCMessage(testMessage)
@@ -749,7 +746,6 @@ func TestParser(t *testing.T) {
 		}
 	})
 
-	// TODO: FAIL
 	t.Run("Test tags. they should be parsed char-at-a-time", func(t *testing.T) {
 		testMessage := "@tag1=value\\\\ntest COMMAND"
 		ircMessage, valid := ParseIRCMessage(testMessage)
@@ -771,7 +767,6 @@ func TestParser(t *testing.T) {
 		}
 	})
 
-	// TODO: FAIl
 	t.Run("Test tag escape for char that doesn't need it", func(t *testing.T) {
 		testMessage := "@tag1=value\\1 COMMAND"
 		ircMessage, valid := ParseIRCMessage(testMessage)
@@ -789,7 +784,6 @@ func TestParser(t *testing.T) {
 		}
 	})
 
-	// TODO: FAIL
 	t.Run("Test slash at end of tag", func(t *testing.T) {
 		testMessage := "@tag1=value1\\ COMMAND"
 		ircMessage, valid := ParseIRCMessage(testMessage)
