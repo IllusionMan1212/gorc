@@ -72,7 +72,7 @@ func NewLogin() State {
 			t.CharLimit = 32
 		case 4:
 			t.Placeholder = "Password"
-			t.CharLimit = 32
+			t.CharLimit = 64
 			t.EchoMode = textinput.EchoPassword
 			t.EchoCharacter = '•'
 		}

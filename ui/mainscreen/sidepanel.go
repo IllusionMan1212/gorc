@@ -39,7 +39,7 @@ func (s *SidePanelState) getHeader() string {
 	if len(s.Client.Channels) != 0 {
 		usersCount = len(s.Client.Channels[s.Client.ActiveChannelIndex].Users)
 	}
-	separator := strings.Repeat("—", s.Viewport.Width) + "\n"
+	separator := strings.Repeat("—", s.Viewport.Width-s.Viewport.Style.GetHorizontalFrameSize()) + "\n"
 	header := fmt.Sprintf("Users in this channel (%d)\n", usersCount) + separator
 
 	return header
@@ -61,7 +61,6 @@ func (s *SidePanelState) getLatestNicks() []string {
 func NewSidePanel(client *irc.Client) *SidePanelState {
 	newViewport := viewport.New(0, 0)
 	newViewport.Style = SidePanelStyle.Copy()
-	newViewport.Wrap = viewport.Wrap
 
 	return &SidePanelState{
 		Client:   client,
@@ -119,7 +118,7 @@ func (s *SidePanelState) UpdateNicks() {
 func (s *SidePanelState) SetSize(width, height, inputboxHeight int) {
 	// We ceil here because width is an int and some fractions are lost
 	// -1 is for some extra invisible margin or padding between the sidepanel and the inputbox
-	newWidth := int(math.Ceil(math.Ceil((float64(width) * 2 / 10)) - float64(s.Viewport.Style.GetHorizontalFrameSize())))
+	newWidth := int(math.Ceil((float64(width) * 2 / 10)))
 	newHeight := height - inputboxHeight - s.Viewport.Style.GetVerticalFrameSize() - 1
 
 	s.Viewport.Style = s.Viewport.Style.Width(newWidth)

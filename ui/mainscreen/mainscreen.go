@@ -57,7 +57,6 @@ type State struct {
 
 func NewMainScreen(client *irc.Client) State {
 	newViewport := viewport.New(0, 0)
-	newViewport.Wrap = viewport.Wrap
 	newViewport.Style = MessagesStyle.Copy()
 
 	return State{
@@ -227,13 +226,13 @@ func (s *State) Blur() {
 
 func (s *State) SetSize(width, height int) {
 	s.InputBox.SetSize(width)
-	s.SidePanel.SetSize(width, height, s.InputBox.Style.GetVerticalFrameSize())
+	s.SidePanel.SetSize(width, height, s.InputBox.Style.GetVerticalPadding())
 
 	// We floor because width is an int and some fractions are lost when casting
 	// and also because we ceil the sidepanel's width
 	// -3 for the tab bar height
-	newWidth := int(math.Floor(float64(width)*8/10) - float64(s.Viewport.Style.GetHorizontalFrameSize()))
-	newHeight := height - s.InputBox.Style.GetVerticalFrameSize() - s.Viewport.Style.GetVerticalFrameSize() - 3
+	newWidth := int(math.Floor(float64(width) * 8 / 10))
+	newHeight := height - s.InputBox.Style.GetVerticalFrameSize() - 3
 
 	s.Viewport.Width = newWidth
 	s.Viewport.Height = newHeight
