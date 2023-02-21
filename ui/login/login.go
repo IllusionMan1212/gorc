@@ -61,15 +61,18 @@ func NewLogin() State {
 			t.Focus()
 			t.CharLimit = 40
 			t.TextStyle = FocusedStyle
+			t.Validate = NoSpacesValidation
 		case 1:
 			t.Placeholder = "Port"
 			t.CharLimit = 5
+			t.Validate = ValidatePort
 		case 2:
 			t.Placeholder = "Channel"
 			t.CharLimit = 32
 		case 3:
 			t.Placeholder = "Nickname"
 			t.CharLimit = 32
+			t.Validate = NoSpacesValidation
 		case 4:
 			t.Placeholder = "Password"
 			t.CharLimit = 64
