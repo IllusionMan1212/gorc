@@ -82,7 +82,12 @@ type Client struct {
 
 	// Index of the last visible tab in the tab bar
 	LastTabIndexInTabBar int
+
+	// The acknowledged capabilities
+	EnabledCapabilities Capabilities
 }
+
+type Capabilities map[string]string
 
 type MsgFmtOpts struct {
 	WithTimestamp bool
@@ -138,6 +143,7 @@ func (s *Client) Initialize(host string, port string, tlsEnabled bool) {
 		s.Port = port
 		s.ActiveChannel = host
 		s.Channels = make([]Channel, 0)
+		s.EnabledCapabilities = make(Capabilities, 0)
 		return
 	}
 
@@ -156,6 +162,7 @@ func (s *Client) Initialize(host string, port string, tlsEnabled bool) {
 	s.Port = port
 	s.ActiveChannel = host
 	s.Channels = make([]Channel, 0)
+	s.EnabledCapabilities = make(Capabilities, 0)
 }
 
 func (c *Client) Register(nick string, password string, channel string) {
@@ -164,17 +171,14 @@ func (c *Client) Register(nick string, password string, channel string) {
 		Users: make(map[string]User),
 	})
 
-	c.SendCommand(commands.CAP, "LS")
+	c.SendCommand(commands.CAP, "LS", "302")
 	if password != "" {
 		c.SendCommand(commands.PASS, password)
 	}
-	// TODO: check if nickname has spaces and remove them
 	c.SendCommand(commands.NICK, nick)
 	// set user-wanted nickname
 	c.Nickname = nick
 	c.SendCommand(commands.USER, nick, "0", "*", nick)
-	// TODO: CAP REQ :whatever capability the client recognizes and supports
-	c.SendCommand(commands.CAP, "END")
 	// joining a channel when registering is optional
 	if channel != "" {
 		c.SendCommand(commands.JOIN, channel)

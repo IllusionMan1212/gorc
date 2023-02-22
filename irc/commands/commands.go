@@ -116,6 +116,7 @@ const (
 	RPL_MYINFO          = "004" // RFC2812 - Implemented
 	RPL_ISUPPORT        = "005" // ??????? - Not Implemented (TODO:)
 	RPL_BOUNCE          = "010" // ??????? - Not Implemented (TODO:)
+	RPL_REMOTEISUPPORT  = "105" // ??????? - Not Implemented (TODO:) // Exact same as RPL_ISUPPORT but for remote servers
 	RPL_TRACELINK       = "200" // RFC1459 - Not Implemented (TODO:)
 	RPL_TRACECONNECTING = "201" // RFC1459 - Not Implemented (TODO:)
 	RPL_TRACEHANDSHAKE  = "202" // RFC1459 - Not Implemented (TODO:)
@@ -240,7 +241,7 @@ const (
 	ERR_NOTOPLEVEL        = "413" // RFC1459 - Not Implemented (TODO:)
 	ERR_WILDTOPLEVEL      = "414" // RFC1459 - Not Implemented (TODO:)
 	ERR_BADMASK           = "415" // RFC2812 - Not Implemented (TODO:)
-	ERR_UNKNOWNCOMMAND    = "421" // RFC1459 - Not Implemented (TODO:)
+	ERR_UNKNOWNCOMMAND    = "421" // RFC1459 - Implemented
 	ERR_NOMOTD            = "422" // RFC1459 - Not Implemented (TODO:)
 	ERR_NOADMININFO       = "423" // RFC1459 - Not Implemented (TODO:)
 	ERR_FILEERROR         = "424" // RFC1459 - Not Implemented (TODO:)
@@ -312,7 +313,7 @@ var Features = map[string]bool{
 	"CHANLIMIT":   true,
 	"CHANMODES":   true,
 	"CHANNELLEN":  true,
-	"CHANTYPES":   true,
+	"CHANTYPES":   true, // Channel Types. Default is #. Available are #&
 	"CHARSET":     true, // Deprecated but might still be used
 	"CLIENTVER":   true, // Deprecated but might still be used
 	"CNOTICE":     true,
@@ -364,7 +365,42 @@ var Features = map[string]bool{
 	"WHOX":        true,
 }
 
-// Messages MUST end in CRLF and SHOULD be encoded and decoded using UTF-8 (with fallbacks such as Latin-1).
-// Names are casemapped, read the casemapping from the RPL_ISUPPORT the server sends when registration is completed.
+var Capabilities = map[string]bool{
+	// Twitch-specific capabilities
+	"twitch.tv/membership": false,
+	"twitch.tv/commands":   false,
+	"twitch.tv/tags":       false,
 
-// When receiving a numeric reply, client MUST be able to handle any number of parameters on a numeric reply.
+	// Solanum-specific capabilities
+	"solanum.chat/identify-msg": false,
+	"solanum.chat/oper":         false,
+	"solanum.chat/realhost":     false,
+
+	// IRCv3 capabilities
+	"account-notify":       false,
+	"account-registration": false, // Draft
+	"account-tag":          false,
+	"away-notify":          false,
+	"batch":                false,
+	"cap-notify":           true,
+	"channel-rename":       false, // Draft
+	"chathistory":          false, // Draft
+	"chghost":              false,
+	"echo-message":         false,
+	"event-playback":       false, // Draft
+	"extended-join":        false,
+	"extended-monitor":     false,
+	"invite-notify":        false,
+	"labeled-response":     false,
+	"message-tags":         false,
+	"metadata":             false,
+	"monitor":              false,
+	"multi-prefix":         false,
+	"multiline":            false, // Draft
+	"read-marker":          false, // Draft
+	"sasl":                 false,
+	"server-time":          true,
+	"setname":              false,
+	"tls":                  false, // Deprecated
+	"userhost-in-names":    false,
+}

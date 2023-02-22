@@ -18,6 +18,7 @@ package parser
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -34,9 +35,17 @@ type IRCMessage struct {
 type Tags map[string]string
 
 func (m *IRCMessage) setTimestamp() {
-	// TODO: get timestamp from time tag
-	now := time.Now()
-	m.Timestamp = fmt.Sprintf("[%02d:%02d]", now.Hour(), now.Minute())
+	if serverTime, ok := m.Tags["time"]; ok {
+		t, err := time.Parse("2006-01-02T15:04:05.000Z", serverTime)
+		if err != nil {
+			// TODO: properly handle error
+			log.Fatalln(err)
+		}
+		m.Timestamp = fmt.Sprintf("[%02d:%02d]", t.Local().Hour(), t.Local().Minute())
+	} else {
+		now := time.Now()
+		m.Timestamp = fmt.Sprintf("[%02d:%02d]", now.Hour(), now.Minute())
+	}
 }
 
 func escapeCharacters(char rune) string {

@@ -169,6 +169,87 @@ func handlePart(msg parser.IRCMessage, client *irc.Client) {
 	client.Tea.Send(cmds.SwitchChannels())
 }
 
+func handleCAP(msg parser.IRCMessage, client *irc.Client) {
+	switch msg.Parameters[1] {
+	case "LIST":
+		fallthrough
+	case "NEW":
+		fallthrough
+	case "LS":
+		caps := strings.Split(msg.Parameters[2], " ")
+		recognizedCaps := make([]irc.Capabilities, 0)
+		capabilities := make(irc.Capabilities, 0)
+		length := 0
+
+		for _, capability := range caps {
+			// NOTE: not sure if I should store the cap value the server advertises or use my own
+			parts := strings.Split(capability, "=")
+			key := parts[0]
+			value := ""
+			if len(parts) > 1 {
+				value = parts[1]
+			}
+
+			if commands.Capabilities[key] {
+				// When the final parameter approaches 510 bytes,
+				// we send multiple REQ commands
+				// (https://ircv3.net/specs/extensions/capability-negotiation.html#the-cap-req-subcommand)
+				if length+len(capability) >= 500 {
+					recognizedCaps = append(recognizedCaps, capabilities)
+					capabilities = make(irc.Capabilities, 0)
+					length = 0
+				}
+
+				capabilities[key] = value
+				length += len(capability)
+			} else {
+				log.Println("Unknown capability:", capability)
+			}
+		}
+		recognizedCaps = append(recognizedCaps, capabilities)
+
+		for _, capsList := range recognizedCaps {
+			list := make([]string, 0)
+			for key, value := range capsList {
+				if len(value) > 0 {
+					list = append(list, key+"="+value)
+				} else {
+					list = append(list, key)
+				}
+			}
+			client.SendCommand(commands.CAP, "REQ", strings.Join(list, " "))
+		}
+		client.SendCommand(commands.CAP, "END")
+	case "ACK":
+		caps := strings.Split(msg.Parameters[2], " ")
+		for _, capability := range caps {
+			if capability[0] == '-' {
+				delete(client.EnabledCapabilities, capability[1:])
+			} else {
+				parts := strings.Split(capability, "=")
+				key := parts[0]
+				value := ""
+				if len(parts) > 1 {
+					value = parts[1]
+				}
+				client.EnabledCapabilities[key] = value
+			}
+		}
+	case "NAK":
+		caps := strings.Split(msg.Parameters[2], " ")
+		msgOpts := irc.MsgFmtOpts{
+			WithTimestamp: true,
+			AsServerMsg:   true,
+		}
+		client.Channels[0].AppendMsg(msg.Timestamp, "Unrecognized capabilities: "+strings.Join(caps, " "), msgOpts)
+	case "DEL":
+		caps := strings.Split(msg.Parameters[2], " ")
+		for _, capability := range caps {
+			delete(client.EnabledCapabilities, capability)
+		}
+	}
+}
+
 func handleWELCOME(msg parser.IRCMessage, client *irc.Client) {
 	nick := msg.Parameters[0]
 	welcomeMsg := msg.Parameters[1]
@@ -467,6 +548,17 @@ func handleNOSUCHSERVER(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
+func handleUNKNOWNCOMMAND(msg parser.IRCMessage, client *irc.Client) {
+	message := msg.Parameters[1] + " " + msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
 func handleNONICKNAMEGIVEN(msg parser.IRCMessage, client *irc.Client) {
 	message := msg.Parameters[1]
 
@@ -513,6 +605,8 @@ func HandleCommand(msg parser.IRCMessage, client *irc.Client) {
 		handleQuit(msg, client)
 	case commands.PART:
 		handlePart(msg, client)
+	case commands.CAP:
+		handleCAP(msg, client)
 	case commands.RPL_WELCOME:
 		handleWELCOME(msg, client)
 	case commands.RPL_YOURHOST:
@@ -569,6 +663,8 @@ func HandleCommand(msg parser.IRCMessage, client *irc.Client) {
 		handleWHOISMODES(msg, client)
 	case commands.ERR_NOSUCHSERVER:
 		handleNOSUCHSERVER(msg, client)
+	case commands.ERR_UNKNOWNCOMMAND:
+		handleUNKNOWNCOMMAND(msg, client)
 	case commands.ERR_NONICKNAMEGIVEN:
 		handleNONICKNAMEGIVEN(msg, client)
 	case commands.ERR_NEEDMOREPARAMS:
