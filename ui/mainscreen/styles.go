@@ -22,16 +22,16 @@ import (
 )
 
 var (
-	InputboxStyle = ui.DefaultStyle.Copy().
+	InputboxStyle = ui.DefaultStyle.
 			Border(lipgloss.NormalBorder(), true).
 			Padding(0, 1).
 			Width(ui.MainStyle.GetWidth()).
 			BorderForeground(ui.AccentColor)
-	MessagesStyle = ui.DefaultStyle.Copy().
+	MessagesStyle = ui.DefaultStyle.
 			Border(lipgloss.NormalBorder(), false, true, true, true).
 			Width(ui.MainStyle.GetWidth() * 8 / 10).
 			BorderForeground(ui.PrimaryColor)
-	SidePanelStyle = ui.DefaultStyle.Copy().
+	SidePanelStyle = ui.DefaultStyle.
 			Border(lipgloss.NormalBorder(), true).
 			Width(ui.MainStyle.GetWidth() * 2 / 10).
 			BorderForeground(ui.PrimaryColor)
@@ -85,26 +85,26 @@ var (
 		Foreground(ui.PrimaryColor).
 		Padding(0, 1)
 
-	activeTab = tab.Copy().
+	activeTab = tab.
 			Border(activeTabBorder, true).
 			BorderForeground(ui.AccentColor).
 			Foreground(ui.AccentColor).
 			Italic(true).
 			Bold(true)
 
-	leftArrowDim = tab.Copy().
+	leftArrowDim = tab.
 			Border(leftArrowBorder, true).
 			BorderForeground(ui.PrimaryColor).
 			Foreground(ui.DisabledColor)
-	rightArrowDim = tab.Copy().
+	rightArrowDim = tab.
 			Border(rightArrowBorder, true).
 			BorderForeground(ui.PrimaryColor).
 			Foreground(ui.DisabledColor)
 
-	leftArrowLit = tab.Copy().
+	leftArrowLit = tab.
 			Border(leftArrowBorder, true).
 			Foreground(ui.PrimaryColor)
-	rightArrowLit = tab.Copy().
+	rightArrowLit = tab.
 			Border(rightArrowBorder, true).
 			Foreground(ui.PrimaryColor)
 

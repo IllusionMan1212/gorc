@@ -24,7 +24,7 @@ import (
 
 func NoSpacesValidation(input string) error {
 	if strings.Contains(input, " ") {
-		return errors.New("Field cannot contain spaces")
+		return errors.New("field cannot contain spaces")
 	}
 
 	return nil
@@ -37,7 +37,7 @@ func ValidatePort(input string) error {
 	}
 
 	if pNum < 1 || pNum > 65535 {
-		return errors.New("Invalid port number")
+		return errors.New("invalid port number")
 	}
 
 	return nil

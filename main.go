@@ -35,13 +35,12 @@ func main() {
 	gorc.Client.Tea = p
 
 	f, err := tea.LogToFile("gorc.log", "gorc")
-	defer f.Close()
-
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer f.Close()
 
-	err = p.Start()
+	_, err = p.Run()
 
 	if err != nil {
 		log.Fatal(err)

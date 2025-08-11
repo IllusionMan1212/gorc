@@ -45,7 +45,7 @@ type State struct {
 	Client *irc.Client
 }
 
-func initialUiState(client *irc.Client) UI {
+func initialUIState(client *irc.Client) UI {
 	return UI{
 		Login:      login.NewLogin(),
 		MainScreen: mainscreen.NewMainScreen(client),
@@ -57,7 +57,7 @@ func InitialState() *State {
 
 	return &State{
 		Client: client,
-		UI:     initialUiState(client),
+		UI:     initialUIState(client),
 	}
 }
 
@@ -125,5 +125,5 @@ func (s State) View() string {
 		return s.UI.MainScreen.View()
 	}
 
-	return "Error: this screen shouldn't ever show"
+	panic("Invalid screen")
 }

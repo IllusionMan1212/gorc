@@ -57,7 +57,7 @@ type State struct {
 
 func NewMainScreen(client *irc.Client) State {
 	newViewport := viewport.New(0, 0)
-	newViewport.Style = MessagesStyle.Copy()
+	newViewport.Style = MessagesStyle
 
 	return State{
 		Client:                client,
@@ -204,24 +204,24 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 }
 
 func (s *State) Focus() {
-	s.Viewport.Style = s.Viewport.Style.Copy().BorderForeground(ui.AccentColor)
+	s.Viewport.Style = s.Viewport.Style.BorderForeground(ui.AccentColor)
 
-	tab = tab.Copy().BorderForeground(ui.AccentColor)
-	leftArrowDim = leftArrowDim.Copy().BorderForeground(ui.AccentColor)
-	rightArrowDim = rightArrowDim.Copy().BorderForeground(ui.AccentColor)
-	leftArrowLit = leftArrowLit.Copy().BorderForeground(ui.AccentColor)
-	rightArrowLit = rightArrowLit.Copy().BorderForeground(ui.AccentColor)
-	tabLine = tabLine.Copy().Foreground(ui.AccentColor)
+	tab = tab.BorderForeground(ui.AccentColor)
+	leftArrowDim = leftArrowDim.BorderForeground(ui.AccentColor)
+	rightArrowDim = rightArrowDim.BorderForeground(ui.AccentColor)
+	leftArrowLit = leftArrowLit.BorderForeground(ui.AccentColor)
+	rightArrowLit = rightArrowLit.BorderForeground(ui.AccentColor)
+	tabLine = tabLine.Foreground(ui.AccentColor)
 }
 func (s *State) Blur() {
-	s.Viewport.Style = s.Viewport.Style.Copy().BorderForeground(ui.PrimaryColor)
+	s.Viewport.Style = s.Viewport.Style.BorderForeground(ui.PrimaryColor)
 
-	tab = tab.Copy().BorderForeground(ui.PrimaryColor)
-	leftArrowDim = leftArrowDim.Copy().BorderForeground(ui.PrimaryColor)
-	rightArrowDim = rightArrowDim.Copy().BorderForeground(ui.PrimaryColor)
-	leftArrowLit = leftArrowLit.Copy().BorderForeground(ui.PrimaryColor)
-	rightArrowLit = rightArrowLit.Copy().BorderForeground(ui.PrimaryColor)
-	tabLine = tabLine.Copy().Foreground(ui.PrimaryColor)
+	tab = tab.BorderForeground(ui.PrimaryColor)
+	leftArrowDim = leftArrowDim.BorderForeground(ui.PrimaryColor)
+	rightArrowDim = rightArrowDim.BorderForeground(ui.PrimaryColor)
+	leftArrowLit = leftArrowLit.BorderForeground(ui.PrimaryColor)
+	rightArrowLit = rightArrowLit.BorderForeground(ui.PrimaryColor)
+	tabLine = tabLine.Foreground(ui.PrimaryColor)
 }
 
 func (s *State) SetSize(width, height int) {
@@ -232,7 +232,7 @@ func (s *State) SetSize(width, height int) {
 	// and also because we ceil the sidepanel's width
 	// -3 for the tab bar height
 	newWidth := int(math.Floor(float64(width) * 8 / 10))
-	newHeight := height - s.InputBox.Style.GetVerticalFrameSize() - 3
+	newHeight := height - s.InputBox.Style.GetVerticalFrameSize() - 3 - 1
 
 	s.Viewport.Width = newWidth
 	s.Viewport.Height = newHeight

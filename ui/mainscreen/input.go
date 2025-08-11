@@ -37,7 +37,7 @@ func NewInputBox() InputState {
 
 	return InputState{
 		Input: input,
-		Style: InputboxStyle.Copy(),
+		Style: InputboxStyle,
 	}
 }
 
@@ -65,12 +65,12 @@ func (s InputState) Update(msg tea.Msg) (InputState, tea.Cmd) {
 
 func (s *InputState) Focus() {
 	s.Input.Focus()
-	s.Style = s.Style.Copy().BorderForeground(ui.AccentColor)
+	s.Style = s.Style.BorderForeground(ui.AccentColor)
 }
 
 func (s *InputState) Blur() {
 	s.Input.Blur()
-	s.Style = s.Style.Copy().BorderForeground(ui.PrimaryColor)
+	s.Style = s.Style.BorderForeground(ui.PrimaryColor)
 }
 
 func (s *InputState) SetSize(width int) {

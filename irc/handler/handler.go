@@ -25,6 +25,8 @@ import (
 	"strings"
 	"time"
 
+	"slices"
+
 	"github.com/illusionman1212/gorc/cmds"
 	"github.com/illusionman1212/gorc/irc"
 	"github.com/illusionman1212/gorc/irc/commands"
@@ -33,7 +35,7 @@ import (
 
 func ReadLoop(client *irc.Client) {
 	// 512 bytes as a base + 8192 additional bytes for tags
-	r := bufio.NewReaderSize(client.TcpConn, 8192+512)
+	r := bufio.NewReaderSize(client.TCPConn, 8192+512)
 
 	for {
 		msg, err := r.ReadString('\n')
@@ -41,7 +43,7 @@ func ReadLoop(client *irc.Client) {
 			if err != io.EOF {
 				log.Println(err)
 			}
-			client.TcpConn.Close()
+			client.TCPConn.Close()
 			return
 		}
 
@@ -153,7 +155,7 @@ func handlePart(msg parser.IRCMessage, client *irc.Client) {
 	for i, c := range client.Channels {
 		if c.Name == channel {
 			if nick == client.Nickname {
-				client.Channels = append(client.Channels[:i], client.Channels[i+1:]...)
+				client.Channels = slices.Delete(client.Channels, i, i+1)
 				if client.ActiveChannelIndex >= i {
 					client.ActiveChannelIndex--
 					client.ActiveChannel = client.Channels[client.ActiveChannelIndex].Name

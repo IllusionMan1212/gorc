@@ -44,15 +44,15 @@ func NewLogin() State {
 		Inputs:                    make([]textinput.Model, 5),
 		ConnectButtonBlurredStyle: BlurredDisabledButton,
 		ConnectButtonFocusedStyle: FocusedDisabledButton,
-		DialogStyle:               DialogStyle.Copy(),
-		WelcomeMsgStyle:           WelcomeMsgStyle.Copy(),
-		Style:                     ui.MainStyle.Copy(),
+		DialogStyle:               DialogStyle,
+		WelcomeMsgStyle:           WelcomeMsgStyle,
+		Style:                     ui.MainStyle,
 	}
 
 	var t textinput.Model
 	for i := range state.Inputs {
 		t = textinput.New()
-		t.CursorStyle = CursorStyle
+		t.Cursor.Style = CursorStyle
 		t.Prompt = ""
 
 		switch i {
@@ -160,11 +160,11 @@ func (s *State) updateInputs(msg tea.Msg) tea.Cmd {
 }
 
 func (s *State) SetSize(width, height int) {
-	s.DialogStyle = s.DialogStyle.Copy().Width(width - s.DialogStyle.GetHorizontalFrameSize())
-	s.DialogStyle = s.DialogStyle.Copy().Height(height*5/10 - s.DialogStyle.GetVerticalFrameSize())
+	s.DialogStyle = s.DialogStyle.Width(width - s.DialogStyle.GetHorizontalFrameSize())
+	s.DialogStyle = s.DialogStyle.Height(height*5/10 - s.DialogStyle.GetVerticalFrameSize())
 
-	s.WelcomeMsgStyle = s.WelcomeMsgStyle.Copy().Width(width)
-	s.WelcomeMsgStyle = s.WelcomeMsgStyle.Copy().Height(height * 5 / 10)
+	s.WelcomeMsgStyle = s.WelcomeMsgStyle.Width(width)
+	s.WelcomeMsgStyle = s.WelcomeMsgStyle.Height(height * 5 / 10)
 }
 
 func (s State) View() string {

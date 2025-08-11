@@ -115,9 +115,9 @@ func parseTags(rawTags string) Tags {
 
 func ParseIRCMessage(line string) (IRCMessage, bool) {
 	ircMessage := IRCMessage{}
-	multipleSpacesRegex := regexp.MustCompile("[^\\S\\t]+")
-	trailingParamRegex := regexp.MustCompile("[^\\S\\t]+:")
-	whitespaceRegex := regexp.MustCompile("^[^\\S\\t]+$")
+	multipleSpacesRegex := regexp.MustCompile(`[^\S\t]+`)
+	trailingParamRegex := regexp.MustCompile(`[^\S\t]+:`)
+	whitespaceRegex := regexp.MustCompile(`^[^\S\t]+$`)
 
 	if len(line) <= 0 {
 		// TODO: do something here ???

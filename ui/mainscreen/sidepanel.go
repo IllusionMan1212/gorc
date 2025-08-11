@@ -60,7 +60,7 @@ func (s *SidePanelState) getLatestNicks() []string {
 
 func NewSidePanel(client *irc.Client) *SidePanelState {
 	newViewport := viewport.New(0, 0)
-	newViewport.Style = SidePanelStyle.Copy()
+	newViewport.Style = SidePanelStyle
 
 	return &SidePanelState{
 		Client:   client,

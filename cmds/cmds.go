@@ -32,7 +32,7 @@ func Connect() tea.Msg {
 
 func Quit(client *irc.Client) tea.Cmd {
 	return func() tea.Msg {
-		if client.TcpConn != nil {
+		if client.TCPConn != nil {
 			client.SendCommand("QUIT")
 		}
 

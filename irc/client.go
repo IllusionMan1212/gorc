@@ -54,7 +54,7 @@ type Channel struct {
 
 type Client struct {
 	// tcp connection
-	TcpConn net.Conn
+	TCPConn net.Conn
 
 	// Host that client is connected to
 	Host string
@@ -98,7 +98,7 @@ type MsgFmtOpts struct {
 
 var notImpl = lipgloss.NewStyle().Foreground(ui.ErrorColor).Render("[NOT IMPL]")
 var serverMsgStyle = lipgloss.NewStyle().Foreground(ui.ServerMsgColor)
-var timestampStyle = serverMsgStyle.Copy()
+var timestampStyle = serverMsgStyle
 var dateStyle = lipgloss.NewStyle().Foreground(ui.DateColor)
 
 const CRLF = "\r\n"
@@ -127,7 +127,7 @@ func (c *Channel) AppendMsg(timestamp string, fullMsg string, opts MsgFmtOpts) {
 	c.History += prefixes + style.Render(fullMsg) + CRLF
 }
 
-func (s *Client) Initialize(host string, port string, tlsEnabled bool) {
+func (c *Client) Initialize(host string, port string, tlsEnabled bool) {
 	addr := fmt.Sprintf("%s:%s", host, port)
 
 	if tlsEnabled {
@@ -138,12 +138,12 @@ func (s *Client) Initialize(host string, port string, tlsEnabled bool) {
 			log.Fatal(err)
 		}
 
-		s.TcpConn = conn
-		s.Host = host
-		s.Port = port
-		s.ActiveChannel = host
-		s.Channels = make([]Channel, 0)
-		s.EnabledCapabilities = make(Capabilities, 0)
+		c.TCPConn = conn
+		c.Host = host
+		c.Port = port
+		c.ActiveChannel = host
+		c.Channels = make([]Channel, 0)
+		c.EnabledCapabilities = make(Capabilities, 0)
 		return
 	}
 
@@ -157,12 +157,12 @@ func (s *Client) Initialize(host string, port string, tlsEnabled bool) {
 		log.Fatal(err)
 	}
 
-	s.TcpConn = conn
-	s.Host = host
-	s.Port = port
-	s.ActiveChannel = host
-	s.Channels = make([]Channel, 0)
-	s.EnabledCapabilities = make(Capabilities, 0)
+	c.TCPConn = conn
+	c.Host = host
+	c.Port = port
+	c.ActiveChannel = host
+	c.Channels = make([]Channel, 0)
+	c.EnabledCapabilities = make(Capabilities, 0)
 }
 
 func (c *Client) Register(nick string, password string, channel string) {
@@ -198,7 +198,7 @@ func (c *Client) SetDay() {
 }
 
 func (c Client) SendCommand(cmd string, params ...string) {
-	if c.TcpConn == nil {
+	if c.TCPConn == nil {
 		// TODO: properly handle the error instead of Fatal-ing
 		log.Fatal("Attempted to write data to nil connection")
 	}
@@ -229,5 +229,5 @@ func (c Client) SendCommand(cmd string, params ...string) {
 		}
 	}
 
-	c.TcpConn.Write([]byte(cmd + paramsString + CRLF))
+	c.TCPConn.Write([]byte(cmd + paramsString + CRLF))
 }
