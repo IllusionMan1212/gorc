@@ -17,7 +17,6 @@
 package login
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -60,22 +59,27 @@ func NewLogin() State {
 			t.Placeholder = "Host"
 			t.Focus()
 			t.CharLimit = 40
+			t.Width = len(t.Placeholder)
 			t.TextStyle = FocusedStyle
 			t.Validate = NoSpacesValidation
 		case 1:
 			t.Placeholder = "Port"
 			t.CharLimit = 5
+			t.Width = len(t.Placeholder)
 			t.Validate = ValidatePort
 		case 2:
 			t.Placeholder = "Channel"
 			t.CharLimit = 32
+			t.Width = len(t.Placeholder)
 		case 3:
 			t.Placeholder = "Nickname"
 			t.CharLimit = 32
+			t.Width = len(t.Placeholder)
 			t.Validate = NoSpacesValidation
 		case 4:
 			t.Placeholder = "Password"
 			t.CharLimit = 64
+			t.Width = len(t.Placeholder)
 			t.EchoMode = textinput.EchoPassword
 			t.EchoCharacter = '•'
 		}
@@ -144,6 +148,7 @@ func (s *State) updateInputs(msg tea.Msg) tea.Cmd {
 
 	for i := range s.Inputs {
 		s.Inputs[i], cmds[i] = s.Inputs[i].Update(msg)
+		s.Inputs[i].Width = max(len(s.Inputs[i].Placeholder), len(s.Inputs[i].Value()))
 	}
 
 	if s.Inputs[0].Value() != "" && s.Inputs[1].Value() != "" && s.Inputs[3].Value() != "" {
@@ -169,36 +174,34 @@ func (s *State) SetSize(width, height int) {
 
 func (s State) View() string {
 	var sb strings.Builder
-
-	for i := range s.Inputs {
-		sb.WriteString(s.Inputs[i].View())
-		if i < len(s.Inputs)-1 {
+	for i, input := range s.Inputs {
+		sb.WriteString(input.View())
+		if i < len(s.Inputs) {
 			sb.WriteRune('\n')
 		}
 	}
 
-	checkbox := &BlurredCheckbox
+	checkbox := BlurredCheckbox
 	// if the checkbox is focused
 	if s.FocusIndex == len(s.Inputs) {
-		checkbox = &FocusedCheckbox
+		checkbox = FocusedCheckbox
 		// if tls is enabled
 		if s.TLS {
-			checkbox = &FocusedCheckboxChecked
+			checkbox = FocusedCheckboxChecked
 		}
 	}
 
 	// if the checkbox is not focused and tls is enabled
 	if s.FocusIndex != len(s.Inputs) && s.TLS {
-		checkbox = &BlurredCheckboxChecked
+		checkbox = BlurredCheckboxChecked
 	}
 
-	fmt.Fprintf(&sb, "\n%s\n", *checkbox)
-
-	button := &s.ConnectButtonBlurredStyle
+	button := s.ConnectButtonBlurredStyle
 	if s.FocusIndex == len(s.Inputs)+1 {
-		button = &s.ConnectButtonFocusedStyle
+		button = s.ConnectButtonFocusedStyle
 	}
-	fmt.Fprintf(&sb, "\n%s\n", *button)
+
+	sb.WriteString(lipgloss.JoinVertical(lipgloss.Center, checkbox, button))
 
 	screen := lipgloss.JoinVertical(lipgloss.Center, s.WelcomeMsgStyle.Render(WelcomeMsg), s.DialogStyle.Render(sb.String()))
 

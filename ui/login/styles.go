@@ -90,10 +90,10 @@ var (
 				Render("TLS Enabled [✔]")
 
 	DialogStyle = lipgloss.NewStyle().
-			Align(lipgloss.Center)
+			AlignHorizontal(lipgloss.Center)
 
 	WelcomeMsgStyle = lipgloss.NewStyle().
-			Align(lipgloss.Center).
+			AlignHorizontal(lipgloss.Center).
 			Foreground(ui.PrimaryColor)
 
 	CursorStyle = lipgloss.NewStyle().
