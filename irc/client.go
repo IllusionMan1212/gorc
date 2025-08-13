@@ -30,6 +30,16 @@ import (
 	"github.com/illusionman1212/gorc/ui"
 )
 
+type Message struct {
+	Timestamp  string
+	Tags       MessageTags // starts with @ | Optional
+	Source     string      // starts with : | Optional
+	Command    string      // can either be a string or a numeric value | Required
+	Parameters []string    // Optional (Dependant on command)
+}
+
+type MessageTags map[string]string
+
 type User struct {
 	// User prefix in channel
 	Prefix string
@@ -102,6 +112,20 @@ var timestampStyle = serverMsgStyle
 var dateStyle = lipgloss.NewStyle().Foreground(ui.DateColor)
 
 const CRLF = "\r\n"
+
+func (m *Message) SetTimestamp() {
+	if serverTime, ok := m.Tags["time"]; ok {
+		t, err := time.Parse("2006-01-02T15:04:05.000Z", serverTime)
+		if err != nil {
+			// TODO: properly handle error
+			log.Fatalln(err)
+		}
+		m.Timestamp = fmt.Sprintf("[%02d:%02d]", t.Local().Hour(), t.Local().Minute())
+	} else {
+		now := time.Now()
+		m.Timestamp = fmt.Sprintf("[%02d:%02d]", now.Hour(), now.Minute())
+	}
+}
 
 func (c *Channel) AppendMsg(timestamp string, fullMsg string, opts MsgFmtOpts) {
 	prefixes := ""

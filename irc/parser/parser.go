@@ -17,36 +17,11 @@
 package parser
 
 import (
-	"fmt"
-	"log"
 	"regexp"
 	"strings"
-	"time"
+
+	"github.com/illusionman1212/gorc/irc"
 )
-
-type IRCMessage struct {
-	Timestamp  string
-	Tags       Tags     // starts with @ | Optional
-	Source     string   // starts with : | Optional
-	Command    string   // can either be a string or a numeric value | Required
-	Parameters []string // Optional (Dependant on command)
-}
-
-type Tags map[string]string
-
-func (m *IRCMessage) setTimestamp() {
-	if serverTime, ok := m.Tags["time"]; ok {
-		t, err := time.Parse("2006-01-02T15:04:05.000Z", serverTime)
-		if err != nil {
-			// TODO: properly handle error
-			log.Fatalln(err)
-		}
-		m.Timestamp = fmt.Sprintf("[%02d:%02d]", t.Local().Hour(), t.Local().Minute())
-	} else {
-		now := time.Now()
-		m.Timestamp = fmt.Sprintf("[%02d:%02d]", now.Hour(), now.Minute())
-	}
-}
 
 func escapeCharacters(char rune) string {
 	switch char {
@@ -75,8 +50,8 @@ func escapeCharacters(char rune) string {
 	}
 }
 
-func parseTags(rawTags string) Tags {
-	tags := make(Tags, 0)
+func parseTags(rawTags string) irc.MessageTags {
+	tags := make(irc.MessageTags, 0)
 	rawTagsSlice := strings.Split(rawTags, ";")
 
 	for _, tag := range rawTagsSlice {
@@ -113,8 +88,8 @@ func parseTags(rawTags string) Tags {
 	return tags
 }
 
-func ParseIRCMessage(line string) (IRCMessage, bool) {
-	ircMessage := IRCMessage{}
+func ParseIRCMessage(line string) (irc.Message, bool) {
+	ircMessage := irc.Message{}
 	multipleSpacesRegex := regexp.MustCompile(`[^\S\t]+`)
 	trailingParamRegex := regexp.MustCompile(`[^\S\t]+:`)
 	whitespaceRegex := regexp.MustCompile(`^[^\S\t]+$`)
@@ -122,7 +97,7 @@ func ParseIRCMessage(line string) (IRCMessage, bool) {
 	if len(line) <= 0 {
 		// TODO: do something here ???
 		// log.Println("empty message")
-		return IRCMessage{}, false
+		return irc.Message{}, false
 	}
 
 	if line[0] == '@' {
@@ -169,7 +144,7 @@ func ParseIRCMessage(line string) (IRCMessage, bool) {
 		ircMessage.Parameters = finalParams
 	}
 
-	ircMessage.setTimestamp()
+	ircMessage.SetTimestamp()
 
 	return ircMessage, true
 }

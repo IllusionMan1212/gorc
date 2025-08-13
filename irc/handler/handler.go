@@ -54,14 +54,14 @@ func ReadLoop(client *irc.Client) {
 	}
 }
 
-func handlePing(msg parser.IRCMessage, client *irc.Client) {
+func handlePing(msg irc.Message, client *irc.Client) {
 	token := msg.Parameters[0]
 	client.SendCommand(commands.PONG, token)
 }
 
-func handlePrivMsg(msg parser.IRCMessage, client *irc.Client) {
+func handlePrivMsg(msg irc.Message, client *irc.Client) {
 	nick := strings.SplitN(msg.Source, "!", 2)[0]
-	channel := msg.Parameters[0]
+	channels := strings.Split(msg.Parameters[0], ",")
 	msgContent := msg.Parameters[1]
 	privMsg := fmt.Sprintf("%s: %s", nick, msgContent)
 
@@ -69,14 +69,41 @@ func handlePrivMsg(msg parser.IRCMessage, client *irc.Client) {
 		WithTimestamp: true,
 	}
 
-	for i, c := range client.Channels {
-		if c.Name == channel {
-			client.Channels[i].AppendMsg(msg.Timestamp, privMsg, msgOpts)
+	for _, channel := range channels {
+		for i, c := range client.Channels {
+			if c.Name == channel {
+				client.Channels[i].AppendMsg(msg.Timestamp, privMsg, msgOpts)
+			}
 		}
 	}
 }
 
-func handleJoin(msg parser.IRCMessage, client *irc.Client) {
+func handleNotice(msg irc.Message, client *irc.Client) {
+	source := strings.SplitN(msg.Source, "!", 2)[0]
+	targets := strings.Split(msg.Parameters[0], ",")
+	msgContent := msg.Parameters[1]
+	notice := fmt.Sprintf("%s: %s", source, msgContent)
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+	}
+
+	for _, target := range targets {
+		if target == "*" || target == client.Nickname {
+			client.Channels[0].AppendMsg(msg.Timestamp, notice, msgOpts)
+			continue
+		}
+
+		for i, c := range client.Channels {
+			if c.Name == targets[0] {
+				client.Channels[i].AppendMsg(msg.Timestamp, notice, msgOpts)
+			}
+		}
+	}
+
+}
+
+func handleJoin(msg irc.Message, client *irc.Client) {
 	nick := strings.SplitN(msg.Source, "!", 2)[0]
 	channel := msg.Parameters[0]
 
@@ -115,7 +142,7 @@ func handleJoin(msg parser.IRCMessage, client *irc.Client) {
 	}
 }
 
-func handleQuit(msg parser.IRCMessage, client *irc.Client) {
+func handleQuit(msg irc.Message, client *irc.Client) {
 	nick := strings.SplitN(msg.Source, "!", 2)[0]
 	reason := msg.Parameters[0]
 	quitMsg := fmt.Sprintf("%s has quit (%s)", nick, reason)
@@ -137,7 +164,7 @@ func handleQuit(msg parser.IRCMessage, client *irc.Client) {
 	client.Tea.Send(cmds.SwitchChannels())
 }
 
-func handlePart(msg parser.IRCMessage, client *irc.Client) {
+func handlePart(msg irc.Message, client *irc.Client) {
 	nick := strings.SplitN(msg.Source, "!", 2)[0]
 	channel := msg.Parameters[0]
 	reason := ""
@@ -171,7 +198,7 @@ func handlePart(msg parser.IRCMessage, client *irc.Client) {
 	client.Tea.Send(cmds.SwitchChannels())
 }
 
-func handleTopic(msg parser.IRCMessage, client *irc.Client) {
+func handleTopic(msg irc.Message, client *irc.Client) {
 	channel := msg.Parameters[0]
 	topic := msg.Parameters[1]
 
@@ -187,7 +214,7 @@ func handleTopic(msg parser.IRCMessage, client *irc.Client) {
 	}
 }
 
-func handleCAP(msg parser.IRCMessage, client *irc.Client) {
+func handleCAP(msg irc.Message, client *irc.Client) {
 	switch msg.Parameters[1] {
 	case "LIST":
 		fallthrough
@@ -268,7 +295,7 @@ func handleCAP(msg parser.IRCMessage, client *irc.Client) {
 	}
 }
 
-func handleWELCOME(msg parser.IRCMessage, client *irc.Client) {
+func handleWELCOME(msg irc.Message, client *irc.Client) {
 	nick := msg.Parameters[0]
 	welcomeMsg := msg.Parameters[1]
 
@@ -282,7 +309,7 @@ func handleWELCOME(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, welcomeMsg, msgOpts)
 }
 
-func handleYOURHOST(msg parser.IRCMessage, client *irc.Client) {
+func handleYOURHOST(msg irc.Message, client *irc.Client) {
 	host := msg.Parameters[1]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -293,7 +320,7 @@ func handleYOURHOST(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, host, msgOpts)
 }
 
-func handleCREATED(msg parser.IRCMessage, client *irc.Client) {
+func handleCREATED(msg irc.Message, client *irc.Client) {
 	created := msg.Parameters[1]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -304,7 +331,7 @@ func handleCREATED(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, created, msgOpts)
 }
 
-func handleMYINFO(msg parser.IRCMessage, client *irc.Client) {
+func handleMYINFO(msg irc.Message, client *irc.Client) {
 	info := strings.Join(msg.Parameters[1:], " ")
 
 	msgOpts := irc.MsgFmtOpts{
@@ -315,7 +342,7 @@ func handleMYINFO(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, info, msgOpts)
 }
 
-func handleLUSERCLIENT(msg parser.IRCMessage, client *irc.Client) {
+func handleLUSERCLIENT(msg irc.Message, client *irc.Client) {
 	message := msg.Parameters[1]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -326,7 +353,7 @@ func handleLUSERCLIENT(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleLUSEROP(msg parser.IRCMessage, client *irc.Client) {
+func handleLUSEROP(msg irc.Message, client *irc.Client) {
 	message := strings.Join(msg.Parameters[1:], " ")
 
 	msgOpts := irc.MsgFmtOpts{
@@ -337,7 +364,7 @@ func handleLUSEROP(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleLUSERUNKNOWN(msg parser.IRCMessage, client *irc.Client) {
+func handleLUSERUNKNOWN(msg irc.Message, client *irc.Client) {
 	message := strings.Join(msg.Parameters[1:], " ")
 
 	msgOpts := irc.MsgFmtOpts{
@@ -348,7 +375,7 @@ func handleLUSERUNKNOWN(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleLUSERCHANNELS(msg parser.IRCMessage, client *irc.Client) {
+func handleLUSERCHANNELS(msg irc.Message, client *irc.Client) {
 	message := strings.Join(msg.Parameters[1:], " ")
 
 	msgOpts := irc.MsgFmtOpts{
@@ -359,7 +386,7 @@ func handleLUSERCHANNELS(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleLUSERME(msg parser.IRCMessage, client *irc.Client) {
+func handleLUSERME(msg irc.Message, client *irc.Client) {
 	message := msg.Parameters[1]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -370,7 +397,7 @@ func handleLUSERME(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleLOCALUSERS(msg parser.IRCMessage, client *irc.Client) {
+func handleLOCALUSERS(msg irc.Message, client *irc.Client) {
 	message := msg.Parameters[1]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -381,7 +408,7 @@ func handleLOCALUSERS(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleGLOBALUSERS(msg parser.IRCMessage, client *irc.Client) {
+func handleGLOBALUSERS(msg irc.Message, client *irc.Client) {
 	message := msg.Parameters[1]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -392,7 +419,7 @@ func handleGLOBALUSERS(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleWHOISUSER(msg parser.IRCMessage, client *irc.Client) {
+func handleWHOISUSER(msg irc.Message, client *irc.Client) {
 	nick := msg.Parameters[1]
 	user := msg.Parameters[2]
 	host := msg.Parameters[3]
@@ -415,7 +442,7 @@ func handleWHOISUSER(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleWHOISSERVER(msg parser.IRCMessage, client *irc.Client) {
+func handleWHOISSERVER(msg irc.Message, client *irc.Client) {
 	server := msg.Parameters[2]
 	serverInfo := msg.Parameters[3]
 
@@ -433,7 +460,7 @@ func handleWHOISSERVER(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleWHOISIDLE(msg parser.IRCMessage, client *irc.Client) {
+func handleWHOISIDLE(msg irc.Message, client *irc.Client) {
 	idleSeconds := msg.Parameters[2]
 	connectedTimestamp, err := strconv.ParseInt(msg.Parameters[3], 10, 64)
 
@@ -457,7 +484,7 @@ func handleWHOISIDLE(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleENDOFWHOIS(msg parser.IRCMessage, client *irc.Client) {
+func handleENDOFWHOIS(msg irc.Message, client *irc.Client) {
 	message := msg.Parameters[2]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -468,7 +495,7 @@ func handleENDOFWHOIS(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleWHOISCHANNELS(msg parser.IRCMessage, client *irc.Client) {
+func handleWHOISCHANNELS(msg irc.Message, client *irc.Client) {
 	chans := msg.Parameters[2]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -481,7 +508,7 @@ func handleWHOISCHANNELS(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleNOTOPIC(msg parser.IRCMessage, client *irc.Client) {
+func handleNOTOPIC(msg irc.Message, client *irc.Client) {
 	channel := msg.Parameters[1]
 	msgStr := msg.Parameters[2]
 
@@ -496,7 +523,7 @@ func handleNOTOPIC(msg parser.IRCMessage, client *irc.Client) {
 	}
 }
 
-func handleTOPIC(msg parser.IRCMessage, client *irc.Client) {
+func handleTOPIC(msg irc.Message, client *irc.Client) {
 	channel := msg.Parameters[1]
 	topic := msg.Parameters[2]
 
@@ -512,7 +539,7 @@ func handleTOPIC(msg parser.IRCMessage, client *irc.Client) {
 	}
 }
 
-func handleNAMREPLY(msg parser.IRCMessage, client *irc.Client) {
+func handleNAMREPLY(msg irc.Message, client *irc.Client) {
 	// TODO: do i need these
 	// client := msg.Parameters[0]
 	// chanSymbol := msg.Parameters[1]
@@ -542,7 +569,7 @@ func handleNAMREPLY(msg parser.IRCMessage, client *irc.Client) {
 	}
 }
 
-func handleMOTDStart(msg parser.IRCMessage, client *irc.Client) {
+func handleMOTDStart(msg irc.Message, client *irc.Client) {
 	message := strings.Join(msg.Parameters[1:], " ")
 
 	msgOpts := irc.MsgFmtOpts{
@@ -553,7 +580,7 @@ func handleMOTDStart(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleMOTD(msg parser.IRCMessage, client *irc.Client) {
+func handleMOTD(msg irc.Message, client *irc.Client) {
 	messageLine := msg.Parameters[1]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -564,7 +591,7 @@ func handleMOTD(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, messageLine, msgOpts)
 }
 
-func handleWHOISHOST(msg parser.IRCMessage, client *irc.Client) {
+func handleWHOISHOST(msg irc.Message, client *irc.Client) {
 	message := msg.Parameters[1] + " " + msg.Parameters[2]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -575,7 +602,7 @@ func handleWHOISHOST(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleWHOISMODES(msg parser.IRCMessage, client *irc.Client) {
+func handleWHOISMODES(msg irc.Message, client *irc.Client) {
 	message := msg.Parameters[1] + " " + msg.Parameters[2]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -586,7 +613,7 @@ func handleWHOISMODES(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleNOSUCHSERVER(msg parser.IRCMessage, client *irc.Client) {
+func handleNOSUCHSERVER(msg irc.Message, client *irc.Client) {
 	message := msg.Parameters[1] + " " + msg.Parameters[2]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -597,7 +624,7 @@ func handleNOSUCHSERVER(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleUNKNOWNCOMMAND(msg parser.IRCMessage, client *irc.Client) {
+func handleUNKNOWNCOMMAND(msg irc.Message, client *irc.Client) {
 	message := msg.Parameters[1] + " " + msg.Parameters[2]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -608,7 +635,7 @@ func handleUNKNOWNCOMMAND(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleNONICKNAMEGIVEN(msg parser.IRCMessage, client *irc.Client) {
+func handleNONICKNAMEGIVEN(msg irc.Message, client *irc.Client) {
 	message := msg.Parameters[1]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -619,7 +646,7 @@ func handleNONICKNAMEGIVEN(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleNEEDMOREPARAMS(msg parser.IRCMessage, client *irc.Client) {
+func handleNEEDMOREPARAMS(msg irc.Message, client *irc.Client) {
 	message := msg.Parameters[1] + " " + msg.Parameters[2]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -630,7 +657,7 @@ func handleNEEDMOREPARAMS(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleALREADYREGISTERED(msg parser.IRCMessage, client *irc.Client) {
+func handleALREADYREGISTERED(msg irc.Message, client *irc.Client) {
 	message := msg.Parameters[1]
 
 	msgOpts := irc.MsgFmtOpts{
@@ -641,13 +668,15 @@ func handleALREADYREGISTERED(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func HandleCommand(msg parser.IRCMessage, client *irc.Client) {
+func HandleCommand(msg irc.Message, client *irc.Client) {
 	// TODO: handle different commands
 	switch msg.Command {
 	case commands.PING:
 		handlePing(msg, client)
 	case commands.PRIVMSG:
 		handlePrivMsg(msg, client)
+	case commands.NOTICE:
+		handleNotice(msg, client)
 	case commands.JOIN:
 		handleJoin(msg, client)
 	case commands.QUIT:
