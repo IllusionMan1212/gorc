@@ -187,8 +187,8 @@ const (
 	RPL_CHANNELMODEIS   = "324" // RFC1459 - Not Implemented (TODO:)
 	RPL_UNIQOPIS        = "325" // RFC2812 - Not Implemented - Has Conflicts (TODO:)
 	RPL_CREATIONTIME    = "329" // Bahamut,InspIRCd - Not Implemented (TODO:)
-	RPL_NOTOPIC         = "331" // RFC1459 - Not Implemented (TODO:)
-	RPL_TOPIC           = "332" // RFC1459 - Not Implemented (TODO:)
+	RPL_NOTOPIC         = "331" // RFC1459 - Implemented
+	RPL_TOPIC           = "332" // RFC1459 - Implemented
 	RPL_TOPICWHOTIME    = "333" // ircu,InspIRCd - Not Implemented (TODO:)
 	RPL_INVITING        = "341" // RFC1459 - Not Implemented (TODO:)
 	RPL_SUMMONING       = "342" // RFC1459 - Not Implemented - Deprecated (TODO:)

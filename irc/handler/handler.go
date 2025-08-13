@@ -171,6 +171,22 @@ func handlePart(msg parser.IRCMessage, client *irc.Client) {
 	client.Tea.Send(cmds.SwitchChannels())
 }
 
+func handleTopic(msg parser.IRCMessage, client *irc.Client) {
+	channel := msg.Parameters[0]
+	topic := msg.Parameters[1]
+
+	msgOpts := irc.MsgFmtOpts{
+		AsServerMsg: true,
+	}
+
+	for i, c := range client.Channels {
+		if c.Name == channel {
+			client.Channels[i].Topic = topic
+			client.Channels[i].AppendMsg(msg.Timestamp, fmt.Sprintf("Topic changed: %v", topic), msgOpts)
+		}
+	}
+}
+
 func handleCAP(msg parser.IRCMessage, client *irc.Client) {
 	switch msg.Parameters[1] {
 	case "LIST":
@@ -465,6 +481,37 @@ func handleWHOISCHANNELS(msg parser.IRCMessage, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
+func handleNOTOPIC(msg parser.IRCMessage, client *irc.Client) {
+	channel := msg.Parameters[1]
+	msgStr := msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		AsServerMsg: true,
+	}
+
+	for i, c := range client.Channels {
+		if c.Name == channel {
+			client.Channels[i].AppendMsg(msg.Timestamp, msgStr, msgOpts)
+		}
+	}
+}
+
+func handleTOPIC(msg parser.IRCMessage, client *irc.Client) {
+	channel := msg.Parameters[1]
+	topic := msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		AsServerMsg: true,
+	}
+
+	for i, c := range client.Channels {
+		if c.Name == channel {
+			client.Channels[i].Topic = topic
+			client.Channels[i].AppendMsg(msg.Timestamp, fmt.Sprintf("TOPIC: %v", topic), msgOpts)
+		}
+	}
+}
+
 func handleNAMREPLY(msg parser.IRCMessage, client *irc.Client) {
 	// TODO: do i need these
 	// client := msg.Parameters[0]
@@ -607,6 +654,8 @@ func HandleCommand(msg parser.IRCMessage, client *irc.Client) {
 		handleQuit(msg, client)
 	case commands.PART:
 		handlePart(msg, client)
+	case commands.TOPIC:
+		handleTopic(msg, client)
 	case commands.CAP:
 		handleCAP(msg, client)
 	case commands.RPL_WELCOME:
@@ -641,6 +690,10 @@ func HandleCommand(msg parser.IRCMessage, client *irc.Client) {
 		handleENDOFWHOIS(msg, client)
 	case commands.RPL_WHOISCHANNELS:
 		handleWHOISCHANNELS(msg, client)
+	case commands.RPL_NOTOPIC:
+		handleNOTOPIC(msg, client)
+	case commands.RPL_TOPIC:
+		handleTOPIC(msg, client)
 	case commands.RPL_NAMREPLY:
 		handleNAMREPLY(msg, client)
 	case commands.RPL_ENDOFNAMES:
