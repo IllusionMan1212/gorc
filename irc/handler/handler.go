@@ -795,12 +795,23 @@ func handleWHOISMODES(msg irc.Message, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
-func handleNOSUCHSERVER(msg irc.Message, client *irc.Client) {
-	message := msg.Parameters[1] + " " + msg.Parameters[2]
+func handleNOSUCHNICK(msg irc.Message, client *irc.Client) {
+	message := msg.Parameters[1] + ": " + msg.Parameters[2]
 
 	msgOpts := irc.MsgFmtOpts{
 		WithTimestamp: true,
-		AsServerMsg:   true,
+		AsErrorMsg:    true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleNOSUCHSERVER(msg irc.Message, client *irc.Client) {
+	message := msg.Parameters[1] + ": " + msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsErrorMsg:    true,
 	}
 
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
@@ -1027,6 +1038,8 @@ func HandleCommand(msg irc.Message, client *irc.Client) {
 		handleWHOISHOST(msg, client)
 	case commands.RPL_WHOISMODES:
 		handleWHOISMODES(msg, client)
+	case commands.ERR_NOSUCHNICK:
+		handleNOSUCHNICK(msg, client)
 	case commands.ERR_NOSUCHSERVER:
 		handleNOSUCHSERVER(msg, client)
 	case commands.ERR_NOSUCHCHANNEL:

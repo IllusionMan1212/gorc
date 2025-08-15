@@ -228,7 +228,7 @@ const (
 	RPL_NOUSERS         = "395" // RFC1459 - Not Implemented (TODO:)
 
 	ERR_UNKNOWNERROR      = "400" // ??????? - Not Implemented (TODO:)
-	ERR_NOSUCHNICK        = "401" // RFC1459 - Not Implemented (TODO:)
+	ERR_NOSUCHNICK        = "401" // RFC1459 - Implemented
 	ERR_NOSUCHSERVER      = "402" // RFC1459 - Implemented
 	ERR_NOSUCHCHANNEL     = "403" // RFC1459 - Implemented
 	ERR_CANNOTSENDTOCHAN  = "404" // RFC1459 - Implemented
