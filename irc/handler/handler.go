@@ -61,20 +61,32 @@ func handlePing(msg irc.Message, client *irc.Client) {
 }
 
 func handlePrivMsg(msg irc.Message, client *irc.Client) {
-	nick := strings.SplitN(msg.Source, "!", 2)[0]
-	channels := strings.Split(msg.Parameters[0], ",")
+	source := strings.ToLower(strings.SplitN(msg.Source, "!", 2)[0])
+	targets := strings.Split(msg.Parameters[0], ",")
 	msgContent := msg.Parameters[1]
-	privMsg := fmt.Sprintf("%s: %s", nick, msgContent)
+	privMsg := fmt.Sprintf("%s: %s", source, msgContent)
 
 	msgOpts := irc.MsgFmtOpts{
 		WithTimestamp: true,
 	}
 
-	for _, channel := range channels {
+targetsLoop:
+	for _, target := range targets {
 		for i, c := range client.Channels {
-			if c.Name == channel {
+			if c.Name == target || c.Name == source {
 				client.Channels[i].AppendMsg(msg.Timestamp, privMsg, msgOpts)
+				continue targetsLoop
 			}
+		}
+
+		if target == client.Nickname {
+			newChannel := irc.Channel{
+				Name:  source,
+				Users: map[string]irc.User{source: {}},
+			}
+
+			newChannel.AppendMsg(msg.Timestamp, privMsg, msgOpts)
+			client.Channels = append(client.Channels, newChannel)
 		}
 	}
 }
