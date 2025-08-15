@@ -434,7 +434,13 @@ func handleLUSERME(msg irc.Message, client *irc.Client) {
 }
 
 func handleLOCALUSERS(msg irc.Message, client *irc.Client) {
-	message := msg.Parameters[1]
+	message := ""
+
+	if len(msg.Parameters) > 2 {
+		message = msg.Parameters[3]
+	} else {
+		message = msg.Parameters[1]
+	}
 
 	msgOpts := irc.MsgFmtOpts{
 		WithTimestamp: true,
@@ -445,7 +451,13 @@ func handleLOCALUSERS(msg irc.Message, client *irc.Client) {
 }
 
 func handleGLOBALUSERS(msg irc.Message, client *irc.Client) {
-	message := msg.Parameters[1]
+	message := ""
+
+	if len(msg.Parameters) > 2 {
+		message = msg.Parameters[3]
+	} else {
+		message = msg.Parameters[1]
+	}
 
 	msgOpts := irc.MsgFmtOpts{
 		WithTimestamp: true,
@@ -683,11 +695,11 @@ func handleNONICKNAMEGIVEN(msg irc.Message, client *irc.Client) {
 }
 
 func handleNEEDMOREPARAMS(msg irc.Message, client *irc.Client) {
-	message := msg.Parameters[1] + " " + msg.Parameters[2]
+	message := msg.Parameters[1] + ": " + msg.Parameters[2]
 
 	msgOpts := irc.MsgFmtOpts{
 		WithTimestamp: true,
-		AsServerMsg:   true,
+		AsErrorMsg:    true,
 	}
 
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
