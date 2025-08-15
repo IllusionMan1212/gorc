@@ -202,6 +202,52 @@ func handleNick(msg irc.Message, client *irc.Client) {
 	client.Tea.Send(cmds.UpdateNicks())
 }
 
+func handleKick(msg irc.Message, client *irc.Client) {
+	channel := msg.Parameters[0]
+	nicks := strings.Split(msg.Parameters[1], ",")
+
+	// Reason is optional
+	reason := ""
+
+	if len(msg.Parameters) > 2 {
+		reason = msg.Parameters[2]
+	}
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	for _, nick := range nicks {
+		kicker := strings.SplitN(msg.Source, "!", 2)[0]
+		message := fmt.Sprintf("%v kicked %v from %v (%v)", kicker, nick, channel, reason)
+
+		for i, c := range client.Channels {
+			if c.Name == channel {
+				if nick == client.Nickname {
+					client.Channels = slices.Delete(client.Channels, i, i+1)
+
+					if client.ActiveChannelIndex >= i {
+						client.ActiveChannelIndex--
+						client.ActiveChannel = client.Channels[client.ActiveChannelIndex].Name
+					}
+					client.LastTabIndexInTabBar--
+
+					message = fmt.Sprintf("You were kicked by %v from %v (%v)", kicker, channel, reason)
+					client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+
+					return
+				}
+				delete(client.Channels[i].Users, nick)
+
+				client.Channels[i].AppendMsg(msg.Timestamp, message, msgOpts)
+			}
+		}
+	}
+
+	client.Tea.Send(cmds.SwitchChannels())
+}
+
 func handleQuit(msg irc.Message, client *irc.Client) {
 	nick := strings.SplitN(msg.Source, "!", 2)[0]
 	reason := msg.Parameters[0]
@@ -964,6 +1010,8 @@ func HandleCommand(msg irc.Message, client *irc.Client) {
 		handleJoin(msg, client)
 	case commands.NICK:
 		handleNick(msg, client)
+	case commands.KICK:
+		handleKick(msg, client)
 	case commands.QUIT:
 		handleQuit(msg, client)
 	case commands.PART:
