@@ -19,7 +19,10 @@ package mainscreen
 import (
 	"fmt"
 	"math"
+	"sort"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -40,9 +43,36 @@ func (s *SidePanelState) getHeader() string {
 		usersCount = len(s.Client.Channels[s.Client.ActiveChannelIndex].Users)
 	}
 	separator := strings.Repeat("—", s.Viewport.Width-s.Viewport.Style.GetHorizontalFrameSize()) + "\n"
-	header := fmt.Sprintf("Users in this channel (%d)\n", usersCount) + separator
+	header := fmt.Sprintf("%d Users\n", usersCount) + separator
 
 	return header
+}
+
+// lessCaseInsensitive compares s, t without allocating
+func lessCaseInsensitive(s, t string) bool {
+	for {
+		if len(t) == 0 {
+			return false
+		}
+		if len(s) == 0 {
+			return true
+		}
+		c, sizec := utf8.DecodeRuneInString(s)
+		d, sized := utf8.DecodeRuneInString(t)
+
+		lowerc := unicode.ToLower(c)
+		lowerd := unicode.ToLower(d)
+
+		if lowerc < lowerd {
+			return true
+		}
+		if lowerc > lowerd {
+			return false
+		}
+
+		s = s[sizec:]
+		t = t[sized:]
+	}
 }
 
 func (s *SidePanelState) getLatestNicks() []string {
@@ -55,6 +85,7 @@ func (s *SidePanelState) getLatestNicks() []string {
 		}
 	}
 
+	sort.Slice(nicks, func(i, j int) bool { return lessCaseInsensitive(nicks[i], nicks[j]) })
 	return nicks
 }
 
