@@ -155,6 +155,53 @@ func handleJoin(msg irc.Message, client *irc.Client) {
 	}
 }
 
+// Sent from server to client to acknowledge a nickname change, or to inform of a nickname change of another user.
+func handleNick(msg irc.Message, client *irc.Client) {
+	oldNick := strings.SplitN(msg.Source, "!", 2)[0]
+	newNick := msg.Parameters[0]
+
+	// TODO: the actual case-sensitivity is determined by the CASEMAPPING feature
+	isMe := strings.EqualFold(oldNick, client.Nickname)
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	message := ""
+
+	if isMe {
+		message = fmt.Sprintf("Your nickname was changed to %v", newNick)
+	} else {
+		message = fmt.Sprintf("%v changed their nickname to %v", oldNick, newNick)
+	}
+
+	for i, channel := range client.Channels {
+		// Rename this user in every channel we can find
+		if user, ok := channel.Users[oldNick]; ok {
+			delete(client.Channels[i].Users, oldNick)
+			client.Channels[i].Users[newNick] = user
+			client.Channels[i].AppendMsg(msg.Timestamp, message, msgOpts)
+		}
+
+		// If we have a private channel open with this user, rename it as well.
+		if strings.EqualFold(channel.Name, oldNick) {
+			client.Channels[i].Name = newNick
+
+			if client.ActiveChannelIndex == i {
+				client.ActiveChannel = newNick
+			}
+		}
+	}
+
+	if isMe {
+		client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+		client.Nickname = newNick
+	}
+
+	client.Tea.Send(cmds.UpdateNicks())
+}
+
 func handleQuit(msg irc.Message, client *irc.Client) {
 	nick := strings.SplitN(msg.Source, "!", 2)[0]
 	reason := msg.Parameters[0]
@@ -898,6 +945,8 @@ func HandleCommand(msg irc.Message, client *irc.Client) {
 		handleNotice(msg, client)
 	case commands.JOIN:
 		handleJoin(msg, client)
+	case commands.NICK:
+		handleNick(msg, client)
 	case commands.QUIT:
 		handleQuit(msg, client)
 	case commands.PART:

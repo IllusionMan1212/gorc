@@ -104,7 +104,7 @@ func (s SidePanelState) Update(msg tea.Msg) (SidePanelState, tea.Cmd) {
 	var cmdsToProcess []tea.Cmd
 
 	switch msg := msg.(type) {
-	case cmds.SwitchChannelsMsg:
+	case cmds.SwitchChannelsMsg, cmds.UpdateNicksMsg:
 		s.UpdateNicks()
 		return s, nil
 	case tea.KeyMsg:

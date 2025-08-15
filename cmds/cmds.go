@@ -69,6 +69,12 @@ func SwitchChannels() tea.Msg {
 	return SwitchChannelsMsg{}
 }
 
+type UpdateNicksMsg struct{}
+
+func UpdateNicks() tea.Msg {
+	return UpdateNicksMsg{}
+}
+
 type UpdateTabBarMsg struct{}
 
 func UpdateTabBar() tea.Msg {
