@@ -95,9 +95,13 @@ type Client struct {
 
 	// The acknowledged capabilities
 	EnabledCapabilities Capabilities
+
+	// The features currently enabled for this client
+	EnabledFeatures Features
 }
 
 type Capabilities map[string]string
+type Features map[string]string
 
 type MsgFmtOpts struct {
 	WithTimestamp bool

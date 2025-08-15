@@ -58,7 +58,7 @@ const (
 	NOTICE  = "NOTICE"  // Send notices between users and to channels.
 
 	// Operator Messages
-	KILL = "KILL" // CLose connection between a client and the server. IRC Operators only (do we need this ??)
+	KILL = "KILL" // Close connection between a client and the server. IRC Operators only (do we need this ??)
 
 	// Optional Messages
 	AWAY     = "AWAY"     // Indicate that the client (user) is away/afk/etc..
@@ -305,64 +305,67 @@ const (
 
 /* --- RPL_ISUPPORT Parameters --- */
 var Features = map[string]bool{
-	"ACCEPT":      true,
+	"ACCEPT": false,
+	// The AWAYLEN parameter indicates the maximum length for the <reason> of an AWAY command.
+	// If an AWAY <reason> has more characters than this parameter, it may be silently truncated by the server before being passed on to other clients.
+	// Clients MAY receive an AWAY <reason> that has more characters than this parameter
 	"AWAYLEN":     true,
-	"BOT":         true,
-	"CALLERID":    true,
-	"CASEMAPPING": true,
-	"CHANLIMIT":   true,
-	"CHANMODES":   true,
-	"CHANNELLEN":  true,
-	"CHANTYPES":   true, // Channel Types. Default is #. Available are #&
-	"CHARSET":     true, // Deprecated but might still be used
-	"CLIENTVER":   true, // Deprecated but might still be used
-	"CNOTICE":     true,
-	"CPRIVMSG":    true,
-	"DEAF":        true,
-	"ELIST":       true,
-	"ESILENCE":    true,
-	"ETRACE":      true,
-	"EXCEPTS":     true,
-	"EXTBAN":      true,
-	"FNC":         true, // Deprecated but might still be used
-	"INVEX":       true,
-	"KEYLEN":      true,
+	"BOT":         false,
+	"CALLERID":    false,
+	"CASEMAPPING": false,
+	"CHANLIMIT":   false,
+	"CHANMODES":   false,
+	"CHANNELLEN":  false,
+	"CHANTYPES":   false, // Channel Types. Default is #. Available are #&
+	"CHARSET":     false, // Deprecated but might still be used
+	"CLIENTVER":   false, // Deprecated but might still be used
+	"CNOTICE":     false,
+	"CPRIVMSG":    false,
+	"DEAF":        false,
+	"ELIST":       false,
+	"ESILENCE":    false,
+	"ETRACE":      false,
+	"EXCEPTS":     false,
+	"EXTBAN":      false,
+	"FNC":         false, // Deprecated but might still be used
+	"INVEX":       false,
+	"KEYLEN":      false,
 	"KICKLEN":     true,
-	"KNOCK":       true,
-	"LINELEN":     true, // Proposed
-	"MAP":         true, // Deprecated but might still be used
-	"MAXBANS":     true, // Deprecated but might still be used
-	"MAXCHANNELS": true, // Deprecated but might still be used
-	"MAXLIST":     true,
-	"MAXNICKLEN":  true,
-	"MAXPARA":     true, // Deprecated but might still be used
-	"MAXTARGETS":  true,
-	"METADATA":    true,
-	"MODES":       true,
-	"MONITOR":     true,
-	"NAMESX":      true, // Deprecated but might still be used
+	"KNOCK":       false,
+	"LINELEN":     false, // Proposed
+	"MAP":         false, // Deprecated but might still be used
+	"MAXBANS":     false, // Deprecated but might still be used
+	"MAXCHANNELS": false, // Deprecated but might still be used
+	"MAXLIST":     false,
+	"MAXNICKLEN":  false,
+	"MAXPARA":     false, // Deprecated but might still be used
+	"MAXTARGETS":  false,
+	"METADATA":    false,
+	"MODES":       false,
+	"MONITOR":     false,
+	"NAMESX":      false, // Deprecated but might still be used
 	"NETWORK":     true,
 	"NICKLEN":     true,
-	"OVERRIDE":    true,
-	"PREFIX":      true,
-	"SAFELIST":    true,
-	"SECURELIST":  true,
-	"SILENCE":     true,
-	"SSL":         true, // Deprecated but might still be used
-	"STARTTLS":    true, // Deprecated but might still be used
-	"STATUSMSG":   true,
-	"STD":         true, // Deprecated but might still be used
-	"TARGMAX":     true,
+	"OVERRIDE":    false,
+	"PREFIX":      false,
+	"SAFELIST":    false,
+	"SECURELIST":  false,
+	"SILENCE":     false,
+	"SSL":         false, // Deprecated but might still be used
+	"STARTTLS":    false, // Deprecated but might still be used
+	"STATUSMSG":   false,
+	"STD":         false, // Deprecated but might still be used
+	"TARGMAX":     false,
 	"TOPICLEN":    true,
-	"UHNAMES":     true, // Deprecated but might still be used
-	"USERIP":      true,
-	"USERLEN":     true, // Proposed
-	"VBANLIST":    true, // Deprecared but might still be used
-	"VLIST":       true,
-	"WALLCHOPS":   true, // Deprecated but might still be used
-	"WALLVOICES":  true, // Deprecated but might still be used
-	"WATCH":       true,
-	"WHOX":        true,
+	"UHNAMES":     false, // Deprecated but might still be used
+	"USERIP":      false,
+	"USERLEN":     false, // Proposed
+	"VBANLIST":    false, // Deprecared but might still be used
+	"VLIST":       false,
+	"WALLCHOPS":   false, // Deprecated but might still be used
+	"WALLVOICES":  false, // Deprecated but might still be used
+	"WATCH":       false,
+	"WHOX":        false,
 }
 
 var Capabilities = map[string]bool{

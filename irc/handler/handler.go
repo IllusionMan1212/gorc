@@ -35,6 +35,7 @@ import (
 
 func ReadLoop(client *irc.Client) {
 	// 512 bytes as a base + 8192 additional bytes for tags
+	// as specified here: https://modern.ircdocs.horse/#message-format
 	r := bufio.NewReaderSize(client.TCPConn, 8192+512)
 
 	for {
@@ -235,18 +236,22 @@ func handleCAP(msg irc.Message, client *irc.Client) {
 				value = parts[1]
 			}
 
-			if commands.Capabilities[key] {
-				// When the final parameter approaches 510 bytes,
-				// we send multiple REQ commands
-				// (https://ircv3.net/specs/extensions/capability-negotiation.html#the-cap-req-subcommand)
-				if length+len(capability) >= 500 {
-					recognizedCaps = append(recognizedCaps, capabilities)
-					capabilities = make(irc.Capabilities, 0)
-					length = 0
-				}
+			if capEnabled, ok := commands.Capabilities[key]; ok {
+				if capEnabled {
+					// When the final parameter approaches 510 bytes,
+					// we send multiple REQ commands
+					// (https://ircv3.net/specs/extensions/capability-negotiation.html#the-cap-req-subcommand)
+					if length+len(capability) >= 500 {
+						recognizedCaps = append(recognizedCaps, capabilities)
+						capabilities = make(irc.Capabilities, 0)
+						length = 0
+					}
 
-				capabilities[key] = value
-				length += len(capability)
+					capabilities[key] = value
+					length += len(capability)
+				} else {
+					log.Println("Unsupported capability:", capability)
+				}
 			} else {
 				log.Println("Unknown capability:", capability)
 			}
@@ -266,6 +271,9 @@ func handleCAP(msg irc.Message, client *irc.Client) {
 		}
 		client.SendCommand(commands.CAP, "END")
 	case "ACK":
+		if msg.Parameters[2] == "" {
+			return
+		}
 		caps := strings.Split(msg.Parameters[2], " ")
 		for _, capability := range caps {
 			if capability[0] == '-' {
@@ -340,6 +348,34 @@ func handleMYINFO(msg irc.Message, client *irc.Client) {
 	}
 
 	client.Channels[0].AppendMsg(msg.Timestamp, info, msgOpts)
+}
+
+func handleISUPPORT(msg irc.Message, client *irc.Client) {
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	for _, token := range msg.Parameters[1 : len(msg.Parameters)-1] {
+		splits := strings.Split(token, "=")
+		key := splits[0]
+		value := ""
+		if len(splits) > 1 {
+			value = splits[1]
+		}
+
+		if supported, known := commands.Features[key]; known {
+			if supported {
+				client.EnabledFeatures[key] = value
+			} else {
+				log.Printf("Unsupported feature: \"%v\" with value: \"%v\"\n", key, value)
+			}
+		} else {
+			log.Printf("Unknown feature: \"%v\" with value: \"%v\"\n", key, value)
+		}
+
+		client.Channels[0].AppendMsg(msg.Timestamp, token, msgOpts)
+	}
 }
 
 func handleLUSERCLIENT(msg irc.Message, client *irc.Client) {
@@ -695,6 +731,8 @@ func HandleCommand(msg irc.Message, client *irc.Client) {
 		handleCREATED(msg, client)
 	case commands.RPL_MYINFO:
 		handleMYINFO(msg, client)
+	case commands.RPL_ISUPPORT:
+		handleISUPPORT(msg, client)
 	case commands.RPL_LUSERCLIENT:
 		handleLUSERCLIENT(msg, client)
 	case commands.RPL_LUSEROP:

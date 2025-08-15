@@ -18,6 +18,7 @@ package mainscreen
 
 import (
 	"math"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -194,6 +195,36 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 		cmdsToProcess = append(cmdsToProcess, cmd)
 	case InputBox:
 		s.InputBox, cmd = s.InputBox.Update(msg)
+		width := 0
+
+		command := strings.Split(s.InputBox.Input.Value(), " ")[0]
+		if len(command) > 0 && command[0] == '/' {
+			switch strings.ToUpper(command)[1:] {
+			case commands.AWAY:
+				w, err := strconv.ParseInt(s.Client.EnabledFeatures["AWAYLEN"], 10, 32)
+				if err == nil {
+					width = int(w)
+				}
+			case commands.TOPIC:
+				w, err := strconv.ParseInt(s.Client.EnabledFeatures["TOPICLEN"], 10, 32)
+				if err == nil {
+					width = int(w)
+				}
+			case commands.NICK:
+				w, err := strconv.ParseInt(s.Client.EnabledFeatures["NICKLEN"], 10, 32)
+				if err == nil {
+					width = int(w)
+				}
+			case commands.KICK:
+				w, err := strconv.ParseInt(s.Client.EnabledFeatures["KICKLEN"], 10, 32)
+				if err == nil {
+					width = int(w)
+				}
+			}
+		}
+
+		s.InputBox.Input.CharLimit = width
+
 		cmdsToProcess = append(cmdsToProcess, cmd)
 	}
 
