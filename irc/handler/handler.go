@@ -467,6 +467,41 @@ func handleGLOBALUSERS(msg irc.Message, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
+func handleAWAY(msg irc.Message, client *irc.Client) {
+	nick := strings.SplitN(msg.Parameters[1], "!", 2)[0]
+	reason := msg.Parameters[2]
+	awayMsg := fmt.Sprintf("%s is away (%s)", nick, reason)
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, awayMsg, msgOpts)
+}
+
+func handleUNAWAY(msg irc.Message, client *irc.Client) {
+	message := msg.Parameters[1]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleNOWAWAY(msg irc.Message, client *irc.Client) {
+	message := msg.Parameters[1]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
 func handleWHOISUSER(msg irc.Message, client *irc.Client) {
 	nick := msg.Parameters[1]
 	user := msg.Parameters[2]
@@ -587,6 +622,24 @@ func handleTOPIC(msg irc.Message, client *irc.Client) {
 	}
 }
 
+func handleVERSION(msg irc.Message, client *irc.Client) {
+	version := msg.Parameters[1]
+	server := msg.Parameters[2]
+	versionMsg := fmt.Sprintf("Server: %v | Version: %v", server, version)
+
+	if len(msg.Parameters) > 3 && msg.Parameters[3] != "" {
+		comments := msg.Parameters[3]
+		versionMsg = fmt.Sprintf("Server: %v | Version: %v | (%s)", server, version, comments)
+	}
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, versionMsg, msgOpts)
+}
+
 func handleNAMREPLY(msg irc.Message, client *irc.Client) {
 	// TODO: do i need these
 	// client := msg.Parameters[0]
@@ -615,6 +668,28 @@ func handleNAMREPLY(msg irc.Message, client *irc.Client) {
 	if channel == client.ActiveChannel {
 		client.Tea.Send(cmds.SwitchChannels())
 	}
+}
+
+func handleINFO(msg irc.Message, client *irc.Client) {
+	message := msg.Parameters[1]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleENDOFINFO(msg irc.Message, client *irc.Client) {
+	message := msg.Parameters[1]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsServerMsg:   true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
 func handleMOTDStart(msg irc.Message, client *irc.Client) {
@@ -672,8 +747,64 @@ func handleNOSUCHSERVER(msg irc.Message, client *irc.Client) {
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
 }
 
+func handleNOSUCHCHANNEL(msg irc.Message, client *irc.Client) {
+	channel := msg.Parameters[1]
+	message := msg.Parameters[2]
+	message = fmt.Sprintf("%v: %v", channel, message)
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsErrorMsg:    true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleCANNOTSENDTOCHAN(msg irc.Message, client *irc.Client) {
+	channel := msg.Parameters[1]
+	message := msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsErrorMsg:    true,
+	}
+
+	for i, c := range client.Channels {
+		if c.Name == channel {
+			client.Channels[i].AppendMsg(msg.Timestamp, message, msgOpts)
+			return
+		}
+	}
+
+	message = fmt.Sprintf("%v: %v", channel, message)
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleTOOMANYCHANNELS(msg irc.Message, client *irc.Client) {
+	channel := msg.Parameters[1]
+	message := msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsErrorMsg:    true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, fmt.Sprintf("%v: %v", channel, message), msgOpts)
+}
+
 func handleUNKNOWNCOMMAND(msg irc.Message, client *irc.Client) {
 	message := msg.Parameters[1] + " " + msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsErrorMsg:    true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleNOMOTD(msg irc.Message, client *irc.Client) {
+	message := msg.Parameters[1]
 
 	msgOpts := irc.MsgFmtOpts{
 		WithTimestamp: true,
@@ -714,6 +845,34 @@ func handleALREADYREGISTERED(msg irc.Message, client *irc.Client) {
 	}
 
 	client.Channels[0].AppendMsg(msg.Timestamp, message, msgOpts)
+}
+
+func handleBADCHANMASK(msg irc.Message, client *irc.Client) {
+	channel := msg.Parameters[1]
+	message := msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsErrorMsg:    true,
+	}
+
+	client.Channels[0].AppendMsg(msg.Timestamp, fmt.Sprintf("%v: %v", channel, message), msgOpts)
+}
+
+func handleCHANOPRIVSNEEDED(msg irc.Message, client *irc.Client) {
+	channel := msg.Parameters[1]
+	message := msg.Parameters[2]
+
+	msgOpts := irc.MsgFmtOpts{
+		WithTimestamp: true,
+		AsErrorMsg:    true,
+	}
+
+	for i, c := range client.Channels {
+		if c.Name == channel {
+			client.Channels[i].AppendMsg(msg.Timestamp, message, msgOpts)
+		}
+	}
 }
 
 func HandleCommand(msg irc.Message, client *irc.Client) {
@@ -759,6 +918,12 @@ func HandleCommand(msg irc.Message, client *irc.Client) {
 		handleLOCALUSERS(msg, client)
 	case commands.RPL_GLOBALUSERS:
 		handleGLOBALUSERS(msg, client)
+	case commands.RPL_AWAY:
+		handleAWAY(msg, client)
+	case commands.RPL_UNAWAY:
+		handleUNAWAY(msg, client)
+	case commands.RPL_NOWAWAY:
+		handleNOWAWAY(msg, client)
 	case commands.RPL_WHOISUSER:
 		handleWHOISUSER(msg, client)
 	case commands.RPL_WHOISSERVER:
@@ -773,6 +938,8 @@ func HandleCommand(msg irc.Message, client *irc.Client) {
 		handleNOTOPIC(msg, client)
 	case commands.RPL_TOPIC:
 		handleTOPIC(msg, client)
+	case commands.RPL_VERSION:
+		handleVERSION(msg, client)
 	case commands.RPL_NAMREPLY:
 		handleNAMREPLY(msg, client)
 	case commands.RPL_ENDOFNAMES:
@@ -781,6 +948,10 @@ func HandleCommand(msg irc.Message, client *irc.Client) {
 
 		// start a timeout and update said timeout on every RPL_NAMREPLY
 		// and log an error if timeout ends without receiving this command.
+	case commands.RPL_INFO:
+		handleINFO(msg, client)
+	case commands.RPL_ENDOFINFO:
+		handleENDOFINFO(msg, client)
 	case commands.RPL_MOTDSTART:
 		handleMOTDStart(msg, client)
 	case commands.RPL_MOTD:
@@ -797,14 +968,26 @@ func HandleCommand(msg irc.Message, client *irc.Client) {
 		handleWHOISMODES(msg, client)
 	case commands.ERR_NOSUCHSERVER:
 		handleNOSUCHSERVER(msg, client)
+	case commands.ERR_NOSUCHCHANNEL:
+		handleNOSUCHCHANNEL(msg, client)
+	case commands.ERR_CANNOTSENDTOCHAN:
+		handleCANNOTSENDTOCHAN(msg, client)
+	case commands.ERR_TOOMANYCHANNELS:
+		handleTOOMANYCHANNELS(msg, client)
 	case commands.ERR_UNKNOWNCOMMAND:
 		handleUNKNOWNCOMMAND(msg, client)
+	case commands.ERR_NOMOTD:
+		handleNOMOTD(msg, client)
 	case commands.ERR_NONICKNAMEGIVEN:
 		handleNONICKNAMEGIVEN(msg, client)
 	case commands.ERR_NEEDMOREPARAMS:
 		handleNEEDMOREPARAMS(msg, client)
 	case commands.ERR_ALREADYREGISTERED:
 		handleALREADYREGISTERED(msg, client)
+	case commands.ERR_BADCHANMASK:
+		handleBADCHANMASK(msg, client)
+	case commands.ERR_CHANOPRIVSNEEDED:
+		handleCHANOPRIVSNEEDED(msg, client)
 	default:
 		fullMsg := fmt.Sprintf(
 			"%s %s %s %s",
