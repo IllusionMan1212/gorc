@@ -101,13 +101,17 @@ type Capabilities map[string]string
 
 type MsgFmtOpts struct {
 	WithTimestamp bool
-	AsServerMsg   bool
-	NotImpl       bool
-	AsDate        bool
+	// TODO: make these a bitset? they should compliment eachother instead of conflicting or rendering twice.
+	AsServerMsg bool
+	AsErrorMsg  bool
+
+	NotImpl bool
+	AsDate  bool
 }
 
-var notImpl = lipgloss.NewStyle().Foreground(ui.ErrorColor).Render("[NOT IMPL]")
+var unimpl = lipgloss.NewStyle().Foreground(ui.ErrorColor).Render("[UNIMPL]")
 var serverMsgStyle = lipgloss.NewStyle().Foreground(ui.ServerMsgColor)
+var errorMsgStyle = lipgloss.NewStyle().Foreground(ui.ErrorColor)
 var timestampStyle = serverMsgStyle
 var dateStyle = lipgloss.NewStyle().Foreground(ui.DateColor)
 
@@ -136,12 +140,17 @@ func (c *Channel) AppendMsg(timestamp string, fullMsg string, opts MsgFmtOpts) {
 	}
 
 	if opts.NotImpl {
-		prefixes += notImpl + " "
+		prefixes += unimpl + " "
 	}
 
 	if opts.AsServerMsg {
 		prefixes += serverMsgStyle.Render("==") + " "
 		style = serverMsgStyle
+	}
+
+	if opts.AsErrorMsg {
+		prefixes += errorMsgStyle.Render("==") + " "
+		style = errorMsgStyle
 	}
 
 	if opts.AsDate {
@@ -154,6 +163,13 @@ func (c *Channel) AppendMsg(timestamp string, fullMsg string, opts MsgFmtOpts) {
 func (c *Client) Initialize(host string, port string, tlsEnabled bool) {
 	addr := fmt.Sprintf("%s:%s", host, port)
 
+	c.Host = host
+	c.Port = port
+	c.ActiveChannel = host
+	c.Channels = make([]Channel, 0)
+	c.EnabledCapabilities = make(Capabilities, 0)
+	c.EnabledFeatures = make(Features, 0)
+
 	if tlsEnabled {
 		cfg := &tls.Config{ServerName: host}
 		conn, err := tls.Dial("tcp", addr, cfg)
@@ -163,11 +179,6 @@ func (c *Client) Initialize(host string, port string, tlsEnabled bool) {
 		}
 
 		c.TCPConn = conn
-		c.Host = host
-		c.Port = port
-		c.ActiveChannel = host
-		c.Channels = make([]Channel, 0)
-		c.EnabledCapabilities = make(Capabilities, 0)
 		return
 	}
 
@@ -182,11 +193,6 @@ func (c *Client) Initialize(host string, port string, tlsEnabled bool) {
 	}
 
 	c.TCPConn = conn
-	c.Host = host
-	c.Port = port
-	c.ActiveChannel = host
-	c.Channels = make([]Channel, 0)
-	c.EnabledCapabilities = make(Capabilities, 0)
 }
 
 func (c *Client) Register(nick string, password string, channel string) {
