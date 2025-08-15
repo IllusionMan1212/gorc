@@ -371,9 +371,15 @@ func handleWELCOME(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	// set server-registered nickname
+	// set server-registered nickname because the server MAY return a different nickname than
+	// the one the user chose because of length restrictions or otherwise.
 	client.Nickname = nick
 	client.Channels[0].AppendMsg(msg.Timestamp, welcomeMsg, msgOpts)
+
+	// Only join the user-requested channel AFTER registration is complete.
+	if client.InitialChannel != "" {
+		client.SendCommand(commands.JOIN, client.InitialChannel)
+	}
 }
 
 func handleYOURHOST(msg irc.Message, client *irc.Client) {

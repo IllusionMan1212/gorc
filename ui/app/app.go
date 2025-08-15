@@ -91,6 +91,7 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		tlsEnabled := s.UI.Login.TLS
 
 		s.UI.CurrentScreen = MainScreen
+		s.Client.InitialChannel = channel
 
 		s.Client.Initialize(host, port, tlsEnabled)
 		s.Client.Register(nickname, password, channel)

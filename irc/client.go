@@ -84,6 +84,9 @@ type Client struct {
 	// Active channel index
 	ActiveChannelIndex int
 
+	// The channel to join immediately after registration completes.
+	InitialChannel string
+
 	// Reference to the bubbletea program
 	Tea *tea.Program
 
@@ -213,10 +216,6 @@ func (c *Client) Register(nick string, password string, channel string) {
 	// set user-wanted nickname
 	c.Nickname = nick
 	c.SendCommand(commands.USER, nick, "0", "*", nick)
-	// joining a channel when registering is optional
-	if channel != "" {
-		c.SendCommand(commands.JOIN, channel)
-	}
 }
 
 func (c *Client) SetDay() {
