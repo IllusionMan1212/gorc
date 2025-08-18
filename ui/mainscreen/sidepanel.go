@@ -39,9 +39,7 @@ type SidePanelState struct {
 
 func (s *SidePanelState) getHeader() string {
 	usersCount := 0
-	if len(s.Client.Channels) != 0 {
-		usersCount = len(s.Client.Channels[s.Client.ActiveChannelIndex].Users)
-	}
+	usersCount = len(s.Client.ActiveChannel.Value.Users)
 	separator := strings.Repeat("—", s.Viewport.Width-s.Viewport.Style.GetHorizontalFrameSize()) + "\n"
 	header := fmt.Sprintf("%d Users\n", usersCount) + separator
 
@@ -78,11 +76,9 @@ func lessCaseInsensitive(s, t string) bool {
 func (s *SidePanelState) getLatestNicks() []string {
 	nicks := make([]string, 0)
 
-	if len(s.Client.Channels) != 0 {
-		for nick, user := range s.Client.Channels[s.Client.ActiveChannelIndex].Users {
-			_nick := user.Prefix + nick
-			nicks = append(nicks, _nick)
-		}
+	for nick, user := range s.Client.ActiveChannel.Value.Users {
+		_nick := user.Prefix + nick
+		nicks = append(nicks, _nick)
 	}
 
 	sort.Slice(nicks, func(i, j int) bool { return lessCaseInsensitive(nicks[i], nicks[j]) })

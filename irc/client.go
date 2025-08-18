@@ -45,6 +45,12 @@ type User struct {
 	Prefix string
 }
 
+type Node[T any] struct {
+	Next  *Node[T]
+	Prev  *Node[T]
+	Value T
+}
+
 type Channel struct {
 	// Channel name
 	Name string
@@ -75,14 +81,11 @@ type Client struct {
 	// Nickname currently in use by the user
 	Nickname string
 
-	// Joined channels
-	Channels []Channel
+	// The root of the doubly linked list of channel
+	RootChannel *Node[Channel]
 
-	// Active channel name
-	ActiveChannel string
-
-	// Active channel index
-	ActiveChannelIndex int
+	// Active channel
+	ActiveChannel *Node[Channel]
 
 	// The channel to join immediately after registration completes.
 	InitialChannel string
@@ -91,10 +94,10 @@ type Client struct {
 	Tea *tea.Program
 
 	// Index of the first visible tab in the tab bar
-	FirstTabIndexInTabBar int
+	// FirstTabIndexInTabBar int
 
 	// Index of the last visible tab in the tab bar
-	LastTabIndexInTabBar int
+	// LastTabIndexInTabBar int
 
 	// The acknowledged capabilities
 	EnabledCapabilities Capabilities
@@ -172,8 +175,6 @@ func (c *Client) Initialize(host string, port string, tlsEnabled bool) {
 
 	c.Host = host
 	c.Port = port
-	c.ActiveChannel = host
-	c.Channels = make([]Channel, 0)
 	c.EnabledCapabilities = make(Capabilities, 0)
 	c.EnabledFeatures = make(Features, 0)
 
@@ -203,10 +204,16 @@ func (c *Client) Initialize(host string, port string, tlsEnabled bool) {
 }
 
 func (c *Client) Register(nick string, password string, channel string) {
-	c.Channels = append(c.Channels, Channel{
+	hostChannel := Channel{
 		Name:  c.Host,
 		Users: make(map[string]User),
-	})
+	}
+	root := &Node[Channel]{Value: hostChannel}
+	root.Next = root
+	root.Prev = root
+
+	c.ActiveChannel = root
+	c.RootChannel = root
 
 	c.SendCommand(commands.CAP, "LS", "302")
 	if password != "" {
@@ -225,12 +232,39 @@ func (c *Client) SetDay() {
 
 	now := time.Now()
 	msg := fmt.Sprintf("————— %s %d —————", now.Month().String(), now.Day())
-	c.Channels[0].AppendMsg("", msg, msgOpts)
+	c.RootChannel.Value.AppendMsg("", msg, msgOpts)
 
 	// TODO: append new day to each channel whenever the day changes
 }
 
-func (c Client) SendCommand(cmd string, params ...string) {
+func (c *Client) AppendChannel(channel Channel) *Node[Channel] {
+	first := c.RootChannel
+	last := c.RootChannel.Prev
+
+	newNode := &Node[Channel]{
+		Value: channel,
+		Next:  first,
+		Prev:  last,
+	}
+
+	last.Next = newNode
+	first.Prev = newNode
+
+	return newNode
+}
+
+func (c *Client) RemoveChannel(channel *Node[Channel]) {
+	prev := channel.Prev
+	next := channel.Next
+
+	prev.Next = next
+	next.Prev = prev
+
+	channel.Prev = nil
+	channel.Next = nil
+}
+
+func (c *Client) SendCommand(cmd string, params ...string) {
 	if c.TCPConn == nil {
 		// TODO: properly handle the error instead of Fatal-ing
 		log.Fatal("Attempted to write data to nil connection")

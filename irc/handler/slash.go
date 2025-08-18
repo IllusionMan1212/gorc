@@ -44,15 +44,20 @@ func handleSlashPrivMsg(params []string, client *irc.Client) tea.Cmd {
 	timestamp := fmt.Sprintf("[%02d:%02d]", now.Hour(), now.Minute())
 	msg := fmt.Sprintf("%s: %s", client.Nickname, strings.Join(params[1:], " "))
 
-	for i, c := range client.Channels {
-		if c.Name == target {
-			client.ActiveChannelIndex = i
-			client.ActiveChannel = target
+	c := client.RootChannel
+	for {
+		if c.Value.Name == target {
+			client.ActiveChannel = c
 
-			client.Channels[i].AppendMsg(timestamp, msg, msgOpts)
+			c.Value.AppendMsg(timestamp, msg, msgOpts)
 
 			client.SendCommand(commands.PRIVMSG, params...)
 			return cmds.SwitchChannels
+		}
+
+		c = c.Next
+		if c == client.RootChannel {
+			break
 		}
 	}
 
@@ -64,11 +69,8 @@ func handleSlashPrivMsg(params []string, client *irc.Client) tea.Cmd {
 		}
 
 		newChannel.AppendMsg(timestamp, msg, msgOpts)
+		client.ActiveChannel = client.AppendChannel(newChannel)
 
-		client.ActiveChannelIndex = len(client.Channels)
-		client.ActiveChannel = target
-
-		client.Channels = append(client.Channels, newChannel)
 		batchedCmds = append(batchedCmds, cmds.UpdateTabBar)
 	}
 
@@ -84,11 +86,16 @@ func handleSlashJoin(params []string, client *irc.Client) tea.Cmd {
 		channel = strings.ToLower(params[0])
 	}
 
-	for i, c := range client.Channels {
-		if c.Name == channel {
-			client.ActiveChannelIndex = i
-			client.ActiveChannel = channel
+	c := client.RootChannel
+	for {
+		if c.Value.Name == channel {
+			client.ActiveChannel = c
 			return cmds.SwitchChannels
+		}
+
+		c = c.Next
+		if c == client.RootChannel {
+			break
 		}
 	}
 	client.SendCommand(commands.JOIN, params...)

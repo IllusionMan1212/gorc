@@ -41,8 +41,10 @@ type UI struct {
 }
 
 type State struct {
-	UI     UI
-	Client *irc.Client
+	UI             UI
+	TerminalWidth  int
+	TerminalHeight int
+	Client         *irc.Client
 }
 
 func initialUIState(client *irc.Client) UI {
@@ -78,8 +80,15 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Width(msg.Width).
 			Height(msg.Height)
 
-		s.UI.Login.SetSize(msg.Width, msg.Height)
-		s.UI.MainScreen.SetSize(msg.Width, msg.Height)
+		s.TerminalWidth = msg.Width
+		s.TerminalHeight = msg.Height
+
+		switch s.UI.CurrentScreen {
+		case Login:
+			s.UI.Login.SetSize(msg.Width, msg.Height)
+		case MainScreen:
+			s.UI.MainScreen.SetSize(msg.Width, msg.Height)
+		}
 
 		return s, nil
 	case cmds.ConnectMsg:
@@ -96,6 +105,8 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		s.Client.Initialize(host, port, tlsEnabled)
 		s.Client.Register(nickname, password, channel)
 		s.Client.SetDay()
+
+		s.UI.MainScreen.SetSize(s.TerminalWidth, s.TerminalHeight)
 
 		go handler.ReadLoop(s.Client)
 
