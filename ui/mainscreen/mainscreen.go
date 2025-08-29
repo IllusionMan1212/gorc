@@ -94,7 +94,7 @@ func (s State) Update(msg tea.Msg) (State, tea.Cmd) {
 					WithTimestamp: true,
 				}
 
-				s.Client.ActiveChannel.Value.AppendMsg(msg.Timestamp, fullMsg, msgOpts)
+				s.Client.ActiveChannel.Value.AppendMsg(msg.Datetime, fullMsg, msgOpts)
 				// TODO: make sure to only append the message to the history if server sends back no errors
 				s.Client.SendCommand(commands.PRIVMSG, s.Client.ActiveChannel.Value.Name, msg.Msg)
 				s.Viewport.SetContent(s.Client.ActiveChannel.Value.History)

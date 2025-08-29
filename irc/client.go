@@ -31,7 +31,7 @@ import (
 )
 
 type Message struct {
-	Timestamp  string
+	DateTime   time.Time
 	Tags       MessageTags // starts with @ | Optional
 	Source     string      // starts with : | Optional
 	Command    string      // can either be a string or a numeric value | Required
@@ -60,6 +60,9 @@ type Channel struct {
 
 	// Channel messages history
 	History string
+
+	// Date of the last message we received in this channel
+	LastUpdatedDate time.Time
 
 	// Users in this channel
 	// The map key is the user's nickname
@@ -116,7 +119,6 @@ type MsgFmtOpts struct {
 	AsErrorMsg  bool
 
 	NotImpl bool
-	AsDate  bool
 }
 
 var unimpl = lipgloss.NewStyle().Foreground(ui.ErrorColor).Render("[UNIMPL]")
@@ -134,19 +136,19 @@ func (m *Message) SetTimestamp() {
 			// TODO: properly handle error
 			log.Fatalln(err)
 		}
-		m.Timestamp = fmt.Sprintf("[%02d:%02d]", t.Local().Hour(), t.Local().Minute())
+		m.DateTime = t
 	} else {
-		now := time.Now()
-		m.Timestamp = fmt.Sprintf("[%02d:%02d]", now.Hour(), now.Minute())
+		m.DateTime = time.Now()
 	}
 }
 
-func (c *Channel) AppendMsg(timestamp string, fullMsg string, opts MsgFmtOpts) {
+func (c *Channel) AppendMsg(datetime time.Time, fullMsg string, opts MsgFmtOpts) {
 	prefixes := ""
 	style := ui.DefaultStyle
 
 	if opts.WithTimestamp {
-		prefixes += timestampStyle.Render(timestamp) + " "
+		str := fmt.Sprintf("[%02d:%02d]", datetime.Local().Hour(), datetime.Local().Minute())
+		prefixes += timestampStyle.Render(str) + " "
 	}
 
 	if opts.NotImpl {
@@ -163,8 +165,10 @@ func (c *Channel) AppendMsg(timestamp string, fullMsg string, opts MsgFmtOpts) {
 		style = errorMsgStyle
 	}
 
-	if opts.AsDate {
-		style = dateStyle
+	if datetime.Local().Year() > c.LastUpdatedDate.Local().Year() || datetime.Local().YearDay() > c.LastUpdatedDate.YearDay() {
+		c.LastUpdatedDate = datetime
+		dateMsg := fmt.Sprintf("————— %s %d —————", c.LastUpdatedDate.Month().String(), c.LastUpdatedDate.Day())
+		c.History += dateStyle.Render(dateMsg) + CRLF
 	}
 
 	c.History += prefixes + style.Render(fullMsg) + CRLF
@@ -223,18 +227,6 @@ func (c *Client) Register(nick string, password string, channel string) {
 	// set user-wanted nickname
 	c.Nickname = nick
 	c.SendCommand(commands.USER, nick, "0", "*", nick)
-}
-
-func (c *Client) SetDay() {
-	msgOpts := MsgFmtOpts{
-		AsDate: true,
-	}
-
-	now := time.Now()
-	msg := fmt.Sprintf("————— %s %d —————", now.Month().String(), now.Day())
-	c.RootChannel.Value.AppendMsg("", msg, msgOpts)
-
-	// TODO: append new day to each channel whenever the day changes
 }
 
 func (c *Client) AppendChannel(channel Channel) *Node[Channel] {

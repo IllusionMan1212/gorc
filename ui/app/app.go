@@ -104,7 +104,6 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		s.Client.Initialize(host, port, tlsEnabled)
 		s.Client.Register(nickname, password, channel)
-		s.Client.SetDay()
 
 		s.UI.MainScreen.SetSize(s.TerminalWidth, s.TerminalHeight)
 

@@ -41,7 +41,6 @@ func handleSlashPrivMsg(params []string, client *irc.Client) tea.Cmd {
 		WithTimestamp: true,
 	}
 	now := time.Now()
-	timestamp := fmt.Sprintf("[%02d:%02d]", now.Hour(), now.Minute())
 	msg := fmt.Sprintf("%s: %s", client.Nickname, strings.Join(params[1:], " "))
 
 	c := client.RootChannel
@@ -49,7 +48,7 @@ func handleSlashPrivMsg(params []string, client *irc.Client) tea.Cmd {
 		if c.Value.Name == target {
 			client.ActiveChannel = c
 
-			c.Value.AppendMsg(timestamp, msg, msgOpts)
+			c.Value.AppendMsg(now, msg, msgOpts)
 
 			client.SendCommand(commands.PRIVMSG, params...)
 			return cmds.SwitchChannels
@@ -68,7 +67,7 @@ func handleSlashPrivMsg(params []string, client *irc.Client) tea.Cmd {
 			Users: map[string]irc.User{target: {}},
 		}
 
-		newChannel.AppendMsg(timestamp, msg, msgOpts)
+		newChannel.AppendMsg(now, msg, msgOpts)
 		client.ActiveChannel = client.AppendChannel(newChannel)
 
 		batchedCmds = append(batchedCmds, cmds.UpdateTabBar)

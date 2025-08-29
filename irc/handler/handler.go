@@ -73,7 +73,7 @@ targetsLoop:
 		current := client.RootChannel
 		for {
 			if current.Value.Name == target || current.Value.Name == source {
-				current.Value.AppendMsg(msg.Timestamp, privMsg, msgOpts)
+				current.Value.AppendMsg(msg.DateTime, privMsg, msgOpts)
 				continue targetsLoop
 			}
 
@@ -89,7 +89,7 @@ targetsLoop:
 				Users: map[string]irc.User{source: {}},
 			}
 
-			newChannel.AppendMsg(msg.Timestamp, privMsg, msgOpts)
+			newChannel.AppendMsg(msg.DateTime, privMsg, msgOpts)
 			client.AppendChannel(newChannel)
 		}
 	}
@@ -107,14 +107,14 @@ func handleNotice(msg irc.Message, client *irc.Client) {
 
 	for _, target := range targets {
 		if target == "*" || target == client.Nickname {
-			client.RootChannel.Value.AppendMsg(msg.Timestamp, notice, msgOpts)
+			client.RootChannel.Value.AppendMsg(msg.DateTime, notice, msgOpts)
 			continue
 		}
 
 		current := client.RootChannel
 		for {
 			if current.Value.Name == targets[0] {
-				current.Value.AppendMsg(msg.Timestamp, notice, msgOpts)
+				current.Value.AppendMsg(msg.DateTime, notice, msgOpts)
 			}
 
 			current = current.Next
@@ -144,7 +144,7 @@ func handleJoin(msg irc.Message, client *irc.Client) {
 		}
 
 		client.ActiveChannel = client.AppendChannel(newChannel)
-		client.ActiveChannel.Value.AppendMsg(msg.Timestamp, joinMsg, msgOpts)
+		client.ActiveChannel.Value.AppendMsg(msg.DateTime, joinMsg, msgOpts)
 
 		if _, exists := client.ActiveChannel.Value.Users[nick]; !exists {
 			client.ActiveChannel.Value.Users[nick] = irc.User{}
@@ -154,7 +154,7 @@ func handleJoin(msg irc.Message, client *irc.Client) {
 		current := client.RootChannel
 		for {
 			if current.Value.Name == channel {
-				current.Value.AppendMsg(msg.Timestamp, joinMsg, msgOpts)
+				current.Value.AppendMsg(msg.DateTime, joinMsg, msgOpts)
 				if _, exists := current.Value.Users[nick]; !exists {
 					current.Value.Users[nick] = irc.User{}
 				}
@@ -199,7 +199,7 @@ func handleNick(msg irc.Message, client *irc.Client) {
 		if user, ok := current.Value.Users[oldNick]; ok {
 			delete(current.Value.Users, oldNick)
 			current.Value.Users[newNick] = user
-			current.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+			current.Value.AppendMsg(msg.DateTime, message, msgOpts)
 		}
 
 		// If we have a private channel open with this user, rename it as well.
@@ -223,7 +223,7 @@ func handleNick(msg irc.Message, client *irc.Client) {
 	}
 
 	if isMe {
-		client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+		client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 		client.Nickname = newNick
 	}
 
@@ -261,13 +261,13 @@ func handleKick(msg irc.Message, client *irc.Client) {
 					client.RemoveChannel(current)
 
 					message = fmt.Sprintf("You were kicked by %v from %v (%v)", kicker, channel, reason)
-					client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+					client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 
 					return
 				}
 				delete(current.Value.Users, nick)
 
-				current.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+				current.Value.AppendMsg(msg.DateTime, message, msgOpts)
 			}
 
 			current = current.Next
@@ -296,7 +296,7 @@ func handleQuit(msg irc.Message, client *irc.Client) {
 		// if i == 0 {
 		// 	continue
 		// }
-		current.Value.AppendMsg(msg.Timestamp, quitMsg, msgOpts)
+		current.Value.AppendMsg(msg.DateTime, quitMsg, msgOpts)
 		delete(current.Value.Users, nick)
 
 		current = current.Next
@@ -333,7 +333,7 @@ func handlePart(msg irc.Message, client *irc.Client) {
 
 				client.RemoveChannel(current)
 			} else {
-				current.Value.AppendMsg(msg.Timestamp, partMsg, msgOpts)
+				current.Value.AppendMsg(msg.DateTime, partMsg, msgOpts)
 				delete(current.Value.Users, nick)
 			}
 
@@ -361,7 +361,7 @@ func handleTopic(msg irc.Message, client *irc.Client) {
 	for {
 		if current.Value.Name == channel {
 			current.Value.Topic = topic
-			current.Value.AppendMsg(msg.Timestamp, fmt.Sprintf("Topic changed: %v", topic), msgOpts)
+			current.Value.AppendMsg(msg.DateTime, fmt.Sprintf("Topic changed: %v", topic), msgOpts)
 			break
 		}
 
@@ -451,7 +451,7 @@ func handleCAP(msg irc.Message, client *irc.Client) {
 			WithTimestamp: true,
 			AsServerMsg:   true,
 		}
-		client.RootChannel.Value.AppendMsg(msg.Timestamp, "Unrecognized capabilities: "+strings.Join(caps, " "), msgOpts)
+		client.RootChannel.Value.AppendMsg(msg.DateTime, "Unrecognized capabilities: "+strings.Join(caps, " "), msgOpts)
 	case "DEL":
 		caps := strings.Split(msg.Parameters[2], " ")
 		for _, capability := range caps {
@@ -472,7 +472,7 @@ func handleWELCOME(msg irc.Message, client *irc.Client) {
 	// set server-registered nickname because the server MAY return a different nickname than
 	// the one the user chose because of length restrictions or otherwise.
 	client.Nickname = nick
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, welcomeMsg, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, welcomeMsg, msgOpts)
 
 	// Only join the user-requested channel AFTER registration is complete.
 	if client.InitialChannel != "" {
@@ -488,7 +488,7 @@ func handleYOURHOST(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, host, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, host, msgOpts)
 }
 
 func handleCREATED(msg irc.Message, client *irc.Client) {
@@ -499,7 +499,7 @@ func handleCREATED(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, created, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, created, msgOpts)
 }
 
 func handleMYINFO(msg irc.Message, client *irc.Client) {
@@ -510,7 +510,7 @@ func handleMYINFO(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, info, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, info, msgOpts)
 }
 
 func handleISUPPORT(msg irc.Message, client *irc.Client) {
@@ -537,7 +537,7 @@ func handleISUPPORT(msg irc.Message, client *irc.Client) {
 			log.Printf("Unknown feature: \"%v\" with value: \"%v\"\n", key, value)
 		}
 
-		client.RootChannel.Value.AppendMsg(msg.Timestamp, token, msgOpts)
+		client.RootChannel.Value.AppendMsg(msg.DateTime, token, msgOpts)
 	}
 }
 
@@ -549,7 +549,7 @@ func handleLUSERCLIENT(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleLUSEROP(msg irc.Message, client *irc.Client) {
@@ -560,7 +560,7 @@ func handleLUSEROP(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleLUSERUNKNOWN(msg irc.Message, client *irc.Client) {
@@ -571,7 +571,7 @@ func handleLUSERUNKNOWN(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleLUSERCHANNELS(msg irc.Message, client *irc.Client) {
@@ -582,7 +582,7 @@ func handleLUSERCHANNELS(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleLUSERME(msg irc.Message, client *irc.Client) {
@@ -593,7 +593,7 @@ func handleLUSERME(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleLOCALUSERS(msg irc.Message, client *irc.Client) {
@@ -610,7 +610,7 @@ func handleLOCALUSERS(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleGLOBALUSERS(msg irc.Message, client *irc.Client) {
@@ -627,7 +627,7 @@ func handleGLOBALUSERS(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleAWAY(msg irc.Message, client *irc.Client) {
@@ -640,7 +640,7 @@ func handleAWAY(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, awayMsg, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, awayMsg, msgOpts)
 }
 
 func handleUNAWAY(msg irc.Message, client *irc.Client) {
@@ -651,7 +651,7 @@ func handleUNAWAY(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleNOWAWAY(msg irc.Message, client *irc.Client) {
@@ -662,7 +662,7 @@ func handleNOWAWAY(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleWHOISUSER(msg irc.Message, client *irc.Client) {
@@ -684,8 +684,8 @@ func handleWHOISUSER(msg irc.Message, client *irc.Client) {
 		realName,
 	)
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, "WHOIS Information", msgOpts)
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, "WHOIS Information", msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleWHOISSERVER(msg irc.Message, client *irc.Client) {
@@ -703,7 +703,7 @@ func handleWHOISSERVER(msg irc.Message, client *irc.Client) {
 		serverInfo,
 	)
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleWHOISIDLE(msg irc.Message, client *irc.Client) {
@@ -727,7 +727,7 @@ func handleWHOISIDLE(msg irc.Message, client *irc.Client) {
 		idleSeconds,
 		since.Format(time.ANSIC),
 	)
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleENDOFWHOIS(msg irc.Message, client *irc.Client) {
@@ -738,7 +738,7 @@ func handleENDOFWHOIS(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleWHOISCHANNELS(msg irc.Message, client *irc.Client) {
@@ -751,7 +751,7 @@ func handleWHOISCHANNELS(msg irc.Message, client *irc.Client) {
 
 	message := fmt.Sprintf("channels: %s", chans)
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleNOTOPIC(msg irc.Message, client *irc.Client) {
@@ -765,7 +765,7 @@ func handleNOTOPIC(msg irc.Message, client *irc.Client) {
 	current := client.RootChannel
 	for {
 		if current.Value.Name == channel {
-			current.Value.AppendMsg(msg.Timestamp, msgStr, msgOpts)
+			current.Value.AppendMsg(msg.DateTime, msgStr, msgOpts)
 			break
 		}
 
@@ -788,7 +788,7 @@ func handleTOPIC(msg irc.Message, client *irc.Client) {
 	for {
 		if current.Value.Name == channel {
 			current.Value.Topic = topic
-			current.Value.AppendMsg(msg.Timestamp, fmt.Sprintf("TOPIC: %v", topic), msgOpts)
+			current.Value.AppendMsg(msg.DateTime, fmt.Sprintf("TOPIC: %v", topic), msgOpts)
 			break
 		}
 
@@ -814,7 +814,7 @@ func handleVERSION(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, versionMsg, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, versionMsg, msgOpts)
 }
 
 func handleNAMREPLY(msg irc.Message, client *irc.Client) {
@@ -863,7 +863,7 @@ func handleINFO(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleENDOFINFO(msg irc.Message, client *irc.Client) {
@@ -874,7 +874,7 @@ func handleENDOFINFO(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleMOTDStart(msg irc.Message, client *irc.Client) {
@@ -885,7 +885,7 @@ func handleMOTDStart(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleMOTD(msg irc.Message, client *irc.Client) {
@@ -896,7 +896,7 @@ func handleMOTD(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, messageLine, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, messageLine, msgOpts)
 }
 
 func handleWHOISHOST(msg irc.Message, client *irc.Client) {
@@ -907,7 +907,7 @@ func handleWHOISHOST(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleWHOISMODES(msg irc.Message, client *irc.Client) {
@@ -918,7 +918,7 @@ func handleWHOISMODES(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleNOSUCHNICK(msg irc.Message, client *irc.Client) {
@@ -929,7 +929,7 @@ func handleNOSUCHNICK(msg irc.Message, client *irc.Client) {
 		AsErrorMsg:    true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleNOSUCHSERVER(msg irc.Message, client *irc.Client) {
@@ -940,7 +940,7 @@ func handleNOSUCHSERVER(msg irc.Message, client *irc.Client) {
 		AsErrorMsg:    true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleNOSUCHCHANNEL(msg irc.Message, client *irc.Client) {
@@ -953,7 +953,7 @@ func handleNOSUCHCHANNEL(msg irc.Message, client *irc.Client) {
 		AsErrorMsg:    true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleCANNOTSENDTOCHAN(msg irc.Message, client *irc.Client) {
@@ -968,7 +968,7 @@ func handleCANNOTSENDTOCHAN(msg irc.Message, client *irc.Client) {
 	current := client.RootChannel
 	for {
 		if current.Value.Name == channel {
-			current.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+			current.Value.AppendMsg(msg.DateTime, message, msgOpts)
 			return
 		}
 
@@ -979,7 +979,7 @@ func handleCANNOTSENDTOCHAN(msg irc.Message, client *irc.Client) {
 	}
 
 	message = fmt.Sprintf("%v: %v", channel, message)
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleTOOMANYCHANNELS(msg irc.Message, client *irc.Client) {
@@ -991,7 +991,7 @@ func handleTOOMANYCHANNELS(msg irc.Message, client *irc.Client) {
 		AsErrorMsg:    true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, fmt.Sprintf("%v: %v", channel, message), msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, fmt.Sprintf("%v: %v", channel, message), msgOpts)
 }
 
 func handleUNKNOWNCOMMAND(msg irc.Message, client *irc.Client) {
@@ -1002,7 +1002,7 @@ func handleUNKNOWNCOMMAND(msg irc.Message, client *irc.Client) {
 		AsErrorMsg:    true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleNOMOTD(msg irc.Message, client *irc.Client) {
@@ -1013,7 +1013,7 @@ func handleNOMOTD(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleNONICKNAMEGIVEN(msg irc.Message, client *irc.Client) {
@@ -1024,7 +1024,7 @@ func handleNONICKNAMEGIVEN(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleNEEDMOREPARAMS(msg irc.Message, client *irc.Client) {
@@ -1035,7 +1035,7 @@ func handleNEEDMOREPARAMS(msg irc.Message, client *irc.Client) {
 		AsErrorMsg:    true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleALREADYREGISTERED(msg irc.Message, client *irc.Client) {
@@ -1046,7 +1046,7 @@ func handleALREADYREGISTERED(msg irc.Message, client *irc.Client) {
 		AsServerMsg:   true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, message, msgOpts)
 }
 
 func handleBADCHANMASK(msg irc.Message, client *irc.Client) {
@@ -1058,7 +1058,7 @@ func handleBADCHANMASK(msg irc.Message, client *irc.Client) {
 		AsErrorMsg:    true,
 	}
 
-	client.RootChannel.Value.AppendMsg(msg.Timestamp, fmt.Sprintf("%v: %v", channel, message), msgOpts)
+	client.RootChannel.Value.AppendMsg(msg.DateTime, fmt.Sprintf("%v: %v", channel, message), msgOpts)
 }
 
 func handleCHANOPRIVSNEEDED(msg irc.Message, client *irc.Client) {
@@ -1073,7 +1073,7 @@ func handleCHANOPRIVSNEEDED(msg irc.Message, client *irc.Client) {
 	current := client.RootChannel
 	for {
 		if current.Value.Name == channel {
-			current.Value.AppendMsg(msg.Timestamp, message, msgOpts)
+			current.Value.AppendMsg(msg.DateTime, message, msgOpts)
 			break
 		}
 
@@ -1217,7 +1217,7 @@ func HandleCommand(msg irc.Message, client *irc.Client) {
 			NotImpl:       true,
 		}
 
-		client.RootChannel.Value.AppendMsg(msg.Timestamp, fullMsg, msgOpts)
+		client.RootChannel.Value.AppendMsg(msg.DateTime, fullMsg, msgOpts)
 	}
 
 	// send a receivedIRCmsg tea message so the ui can update
