@@ -136,7 +136,7 @@ func (m *Message) SetTimestamp() {
 			// TODO: properly handle error
 			log.Fatalln(err)
 		}
-		m.DateTime = t
+		m.DateTime = t.Local()
 	} else {
 		m.DateTime = time.Now()
 	}
@@ -147,7 +147,7 @@ func (c *Channel) AppendMsg(datetime time.Time, fullMsg string, opts MsgFmtOpts)
 	style := ui.DefaultStyle
 
 	if opts.WithTimestamp {
-		str := fmt.Sprintf("[%02d:%02d]", datetime.Local().Hour(), datetime.Local().Minute())
+		str := fmt.Sprintf("[%02d:%02d]", datetime.Hour(), datetime.Minute())
 		prefixes += timestampStyle.Render(str) + " "
 	}
 
@@ -165,7 +165,7 @@ func (c *Channel) AppendMsg(datetime time.Time, fullMsg string, opts MsgFmtOpts)
 		style = errorMsgStyle
 	}
 
-	if datetime.Local().Year() > c.LastUpdatedDate.Local().Year() || datetime.Local().YearDay() > c.LastUpdatedDate.YearDay() {
+	if datetime.Year() > c.LastUpdatedDate.Year() || datetime.YearDay() > c.LastUpdatedDate.YearDay() {
 		c.LastUpdatedDate = datetime
 		dateMsg := fmt.Sprintf("————— %s %d —————", c.LastUpdatedDate.Month().String(), c.LastUpdatedDate.Day())
 		c.History += dateStyle.Render(dateMsg) + CRLF
